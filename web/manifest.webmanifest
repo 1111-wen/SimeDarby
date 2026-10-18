@@ -1,0 +1,13 @@
+{
+  "name": "FloodSafe Route",
+  "short_name": "FloodSafe",
+  "description": "See which roads will flood next and get a safer route.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF2EF",
+  "theme_color": "#2F78B7",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

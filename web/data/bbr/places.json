@@ -1,0 +1,10 @@
+[
+  { "name": "Taman Kyra", "coord": [101.41287, 3.10591], "type": "place" },
+  { "name": "Taman Casira", "coord": [101.41423, 3.09820], "type": "place" },
+  { "name": "Krista Bandar Bukit Raja, Jalan Makyong 3C", "coord": [101.42637, 3.08909], "type": "place" },
+  { "name": "Little Caliphs, Jalan Makyong 6A", "coord": [101.42785, 3.08874], "type": "place" },
+  { "name": "D'Santai, Jalan Makyong 5B", "coord": [101.43054, 3.09033], "type": "place" },
+  { "name": "Q-dees, Jalan Makyong 5C", "coord": [101.43097, 3.08989], "type": "place" },
+  { "name": "Masjid Bandar Bukit Raja (relief centre)", "coord": [101.42946, 3.08999], "type": "relief_centre",
+    "verified": true, "source": "Used as a temporary relief centre (PPS) in the June 2023 flash flood, per APM Selangor via Buletin TV3" }
+]

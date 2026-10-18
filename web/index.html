@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FloodSafe Route</title>
+  <meta name="description" content="See which roads will flood next and get a safer route.">
+  <meta name="theme-color" content="#2F78B7">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icons/icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+  <link href="./css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <div id="map" aria-label="Map showing flood risk and your route"></div>
+
+    <form class="trip" id="trip" autocomplete="off">
+      <span class="mark from" aria-hidden="true"></span>
+      <input id="fromIn" list="places" aria-label="Starting point" placeholder="Your location">
+      <button type="button" class="iconbtn" id="gpsBtn" aria-label="Use my location">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      </button>
+      <span class="mark to" aria-hidden="true"></span>
+      <input id="toIn" list="places" aria-label="Destination" placeholder="Where to?">
+      <button type="button" class="iconbtn" id="swapBtn" aria-label="Swap start and destination">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4v14M3 14l4 4 4-4M17 20V6M13 10l4-4 4 4"/></svg>
+      </button>
+      <div class="modes" role="group" aria-label="Travel mode">
+        <button type="button" data-mode="drive" aria-pressed="true">Drive</button>
+        <button type="button" data-mode="walk" aria-pressed="false">Walk</button>
+      </div>
+      <p class="note" id="note" aria-live="polite"></p>
+      <datalist id="places"></datalist>
+    </form>
+
+    <div class="camtoggle">
+      <button type="button" id="cam3d" aria-pressed="true">3D</button>
+      <button type="button" id="camTop" aria-pressed="false">Top</button>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="assertive"></div>
+
+    <section class="sheet" aria-label="Route details">
+      <div class="grab" aria-hidden="true"></div>
+      <div class="inner">
+        <div class="routehead"><h1 id="eta">Loading…</h1><span id="dist"></span></div>
+        <p class="routesub" id="routeSub"></p>
+        <p class="warn" id="warn" hidden></p>
+
+        <div class="legend">
+          <span><span class="sw" style="background:var(--route)"></span>Your route</span>
+          <span><span class="sw" style="background:var(--moderate)"></span>Moderate risk</span>
+          <span><span class="sw" style="background:var(--high)"></span>High risk</span>
+          <span><span class="sw" style="background:var(--water)"></span>Floodwater</span>
+        </div>
+
+        <div class="rain">
+          <button type="button" class="primary" id="rainBtn" aria-pressed="false">Start demo rain</button>
+          <select id="scenarioSel" aria-label="Rain scenario"></select>
+          <span class="clock" id="clock">No rain</span>
+        </div>
+        <input type="range" class="timeline" id="time" min="0" max="180" step="1" value="0" aria-label="Minutes since rain started (demo timeline)">
+
+        <ol class="steps" id="steps" aria-label="Directions"></ol>
+        <p class="meta" id="meta"></p>
+
+        <details>
+          <summary>About this app</summary>
+          <p id="dataNote"></p>
+          <p id="riskNote"></p>
+          <p>This app supports official warnings. Always follow instructions from Bomba and the authorities, and call 999 in an emergency.</p>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

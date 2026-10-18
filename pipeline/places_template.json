@@ -1,0 +1,4 @@
+[
+  { "name": "Example home (edit me)", "coord": [101.4600, 3.0870], "type": "place" },
+  { "name": "Example relief centre (replace with a verified one)", "coord": [101.4560, 3.0890], "type": "relief_centre", "verified": false, "source": "JKM / district office announcement, date" }
+]

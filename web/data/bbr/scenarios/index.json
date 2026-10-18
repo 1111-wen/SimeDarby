@@ -1,0 +1,9 @@
+{
+  "scenarios": [
+    {
+      "id": "dry",
+      "file": "dry.json",
+      "rain_mm_hr": 0
+    }
+  ]
+}

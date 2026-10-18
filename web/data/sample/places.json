@@ -1,0 +1,60 @@
+[
+  {
+    "name": "Home, Jalan Kenanga (sample)",
+    "coord": [
+      101.4646988,
+      3.085383
+    ],
+    "type": "place"
+  },
+  {
+    "name": "Home, Jalan Bakawali (sample)",
+    "coord": [
+      101.4593012,
+      3.087539
+    ],
+    "type": "place"
+  },
+  {
+    "name": "Relief centre A (sample)",
+    "coord": [
+      101.4582216,
+      3.088617
+    ],
+    "type": "relief_centre",
+    "verified": false
+  },
+  {
+    "name": "Relief centre B (sample)",
+    "coord": [
+      101.4593012,
+      3.0843051
+    ],
+    "type": "relief_centre",
+    "verified": false
+  },
+  {
+    "name": "School, Jalan Anggerik (sample)",
+    "coord": [
+      101.4614602,
+      3.0896949
+    ],
+    "type": "place"
+  },
+  {
+    "name": "Shop lots, Lorong 8 (sample)",
+    "coord": [
+      101.4657784,
+      3.088617
+    ],
+    "type": "place"
+  },
+  {
+    "name": "Bus stop, Jalan Melur (sample)",
+    "coord": [
+      101.4646988,
+      3.0843051
+    ],
+    "type": "place"
+  }
+]

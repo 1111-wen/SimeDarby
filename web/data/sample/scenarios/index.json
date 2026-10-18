@@ -1,0 +1,19 @@
+{
+  "scenarios": [
+    {
+      "id": "moderate",
+      "file": "moderate.json",
+      "rain_mm_hr": 30
+    },
+    {
+      "id": "heavy",
+      "file": "heavy.json",
+      "rain_mm_hr": 60
+    },
+    {
+      "id": "extreme",
+      "file": "extreme.json",
+      "rain_mm_hr": 100
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+run_id,scenario_file,rain_mm_hr,duration_min,pattern,notes
+heavy_60_120,../../web/data/bbr/scenarios/heavy.json,60,120,block,"HEC-RAS run, MSMA-based design storm"

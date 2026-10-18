@@ -1,0 +1,4 @@
+run_id,scenario_file,rain_mm_hr,duration_min,pattern,notes
+moderate,../../web/data/sample/scenarios/moderate.json,30,120,block,SYNTHETIC sample (for testing the scripts only)
+heavy,../../web/data/sample/scenarios/heavy.json,60,120,block,SYNTHETIC sample (for testing the scripts only)
+extreme,../../web/data/sample/scenarios/extreme.json,100,120,block,SYNTHETIC sample (for testing the scripts only)
