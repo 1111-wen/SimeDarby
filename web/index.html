@@ -43,6 +43,27 @@
       <button type="button" id="camTop" aria-pressed="false">Top</button>
     </div>
 
+    <!-- Sponge Township & Drainage System HUD (MSMA / JPS Guidelines) -->
+    <div class="sponge-hud" id="spongeHud" aria-label="Sponge Township Status">
+      <div class="sponge-hud-head">
+        <span class="sponge-hud-title">Sponge Township</span>
+        <span class="sponge-badge badge-safe" id="spongeStatusBadge">Normal (Safe)</span>
+      </div>
+      <div class="sponge-hud-meter">
+        <div class="sponge-hud-bar" id="spongeHudBar" style="width: 18%;"></div>
+      </div>
+      <div class="sponge-hud-stats">
+        <span>Retention: <strong id="spongeStorageText">18% (14,200 m³)</strong></span>
+        <span id="spongeRainText" style="color:var(--water); font-weight:600;">Dry</span>
+      </div>
+      <div class="sponge-hud-tags">
+        <span class="tag drain" title="RCBC storm culverts, U-drains and intake sumps">🚰 Drainage System</span>
+        <span class="tag green" title="Urban parks, gardens, green roofs, rain gardens">🌿 Green</span>
+        <span class="tag blue" title="Restored wetlands, retention basins, widened rivers">💧 Blue</span>
+        <span class="tag gray" title="Porous parking, underground cisterns">⚙️ Gray</span>
+      </div>
+    </div>
+
     <div class="toast" id="toast" role="status" aria-live="assertive"></div>
 
     <section class="sheet" aria-label="Route details">
@@ -50,13 +71,92 @@
       <div class="inner">
         <div class="routehead"><h1 id="eta">Loading…</h1><span id="dist"></span></div>
         <p class="routesub" id="routeSub"></p>
-        <p class="warn" id="warn" hidden></p>
+                <p class="warn" id="warn" hidden></p>
+
+        <!-- Residential Evacuation Decision System -->
+        <div id="evacDecisionCard" class="evac-card" aria-label="Residential Evacuation Decision System">
+          <div class="evac-card-header">
+            <div class="evac-badge-row">
+              <span class="evac-badge badge-evac-stable" id="evacBadge">Conditions Stable — Access Clear</span>
+              <span class="evac-tti-pill" id="evacTtiPill" hidden>⏱️ Est. Flood in 20 min</span>
+            </div>
+            <p class="evac-action" id="evacAction">Loading evacuation recommendation...</p>
+          </div>
+
+          <!-- Current vs Predicted Condition Matrix -->
+          <div class="evac-grid">
+            <div class="evac-col current">
+              <div class="evac-col-head">
+                <span class="dot live"></span>
+                <strong>Current Condition</strong>
+                <span class="evac-time" id="evacCurTime">Now (+0 min)</span>
+              </div>
+              <div class="evac-metric">
+                <span class="metric-val" id="evacCurDepth">0.0 cm</span>
+                <span class="metric-status safe" id="evacCurStatus">Passable</span>
+              </div>
+              <p class="evac-note" id="evacCurNote">Road near your house is passable according to latest available data.</p>
+            </div>
+
+            <div class="evac-col predicted">
+              <div class="evac-col-head">
+                <span class="dot forecast"></span>
+                <strong>Predicted Condition</strong>
+                <span class="evac-time" id="evacPredTime">Next 20–30 min</span>
+              </div>
+              <div class="evac-metric">
+                <span class="metric-val" id="evacPredDepth">0.0 cm</span>
+                <span class="metric-status safe" id="evacPredStatus">Passable</span>
+              </div>
+              <p class="evac-note" id="evacPredNote">Model estimates road will remain passable.</p>
+            </div>
+          </div>
+
+          <!-- Route Safety Criteria & Evacuation Centre -->
+          <div class="evac-route-box">
+            <div class="evac-route-head">
+              <div class="evac-pps-info">
+                <span class="pps-icon">🏛️</span>
+                <div>
+                  <strong id="evacDestName">Masjid Bandar Bukit Raja (relief centre)</strong>
+                  <span class="pps-verified-tag" id="evacPpsTag">✓ Verified Evacuation Centre (PPS)</span>
+                </div>
+              </div>
+              <button type="button" class="btn-pps-switch" id="evacPpsBtn" hidden>Route to PPS</button>
+            </div>
+            <div class="evac-criteria-list" id="evacCriteriaList">
+              <span class="crit-item ok">✓ 0% High-risk roads (100% avoided)</span>
+              <span class="crit-item ok">✓ Safe emergency bypass corridor</span>
+              <span class="crit-item ok">✓ Verified shelter destination</span>
+            </div>
+          </div>
+
+          <!-- Prediction Confidence & Timestamp Bar -->
+          <div class="evac-meta-bar">
+            <div class="evac-meta-item">
+              <span class="meta-icon">🕒</span>
+              <span><strong>Forecast Generated:</strong> <span id="evacTimestamp">20 Oct 2026, 10:30 PM</span></span>
+            </div>
+            <div class="evac-meta-item">
+              <span class="meta-icon">📊</span>
+              <span><strong>Reliability:</strong> <span class="confidence-badge" id="evacConfidence">High (94%)</span></span>
+            </div>
+            <div class="evac-meta-sub" id="evacModelDesc">
+              HEC-RAS 2D Hydrodynamic Unsteady Flow · Calibrated with JPS Selangor Station telemetry
+            </div>
+          </div>
+        </div>
 
         <div class="legend">
           <span><span class="sw" style="background:var(--route)"></span>Your route</span>
           <span><span class="sw" style="background:var(--moderate)"></span>Moderate risk</span>
           <span><span class="sw" style="background:var(--high)"></span>High risk</span>
           <span><span class="sw" style="background:var(--water)"></span>Floodwater</span>
+        </div>
+        <div class="legend sponge-legend">
+          <span><span class="sw" style="background:#00e5ff; border: 2px solid #001a33;"></span>🚰 Drainage Culverts & Sumps</span>
+          <span><span class="sw" style="background:#0288d1"></span>💧 Blue (Wetland Lakes)</span>
+          <span><span class="sw" style="background:#2e7d32"></span>🌿 Green (Parks & Gardens)</span>
         </div>
 
         <div class="rain">
@@ -73,6 +173,7 @@
           <summary>About this app</summary>
           <p id="dataNote"></p>
           <p id="riskNote"></p>
+          <p><strong>Sponge City Framework (MSMA / JPS):</strong> Models Green (urban parks, green roofs, rain gardens), Blue (wetlands, retention basins, widened rivers), and Gray (permeable pavements, cisterns, culverts) infrastructure. As water rises to Warning (&ge;75%) and Danger (&ge;85%), overtopping triggers dynamic evacuation rerouting away from flooded roads toward safety / relief centres (Masjid Bandar Bukit Raja).</p>
           <p>This app supports official warnings. Always follow instructions from Bomba and the authorities, and call 999 in an emergency.</p>
         </details>
       </div>

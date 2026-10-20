@@ -4,12 +4,21 @@ import { loadScenarios, pickScenario, level } from "./flood.js";
 import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps, roadLabel } from "./routing.js";
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
+import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, getTownshipSpongeSummary } from "./sponge.js";
+import { getResidentialEvacuationDecision, renderEvacuationDecisionCard } from "./evac.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
   eta: $("eta"), dist: $("dist"), sub: $("routeSub"), warn: $("warn"), steps: $("steps"), meta: $("meta"),
   clock: $("clock"), toast: $("toast"), time: $("time"), rainBtn: $("rainBtn"), scenarioSel: $("scenarioSel"),
-  fromIn: $("fromIn"), toIn: $("toIn"), note: $("note"), dataNote: $("dataNote")
+  fromIn: $("fromIn"), toIn: $("toIn"), note: $("note"), dataNote: $("dataNote"),
+  spongeHud: $("spongeHud"), spongeStatusBadge: $("spongeStatusBadge"),
+  spongeHudBar: $("spongeHudBar"), spongeStorageText: $("spongeStorageText"), spongeRainText: $("spongeRainText"),
+  evacCard: $("evacDecisionCard"), evacBadge: $("evacBadge"), evacTtiPill: $("evacTtiPill"), evacAction: $("evacAction"),
+  evacCurTime: $("evacCurTime"), evacCurDepth: $("evacCurDepth"), evacCurStatus: $("evacCurStatus"), evacCurNote: $("evacCurNote"),
+  evacPredTime: $("evacPredTime"), evacPredDepth: $("evacPredDepth"), evacPredStatus: $("evacPredStatus"), evacPredNote: $("evacPredNote"),
+  evacDestName: $("evacDestName"), evacPpsTag: $("evacPpsTag"), evacPpsBtn: $("evacPpsBtn"), evacCriteriaList: $("evacCriteriaList"),
+  evacTimestamp: $("evacTimestamp"), evacConfidence: $("evacConfidence"), evacModelDesc: $("evacModelDesc")
 };
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const OFF_NETWORK_M = 400; // further than this from any mapped road = outside the mapped area
@@ -37,20 +46,36 @@ map.on("styleimagemissing", e => {
 });
 
 const emptyFC = { type: "FeatureCollection", features: [] };
-function addLayers() {
-  // 3D buildings from OpenStreetMap (OpenMapTiles schema), unless the style already has them.
-  const hasExtrusion = map.getStyle().layers.some(l => l.type === "fill-extrusion");
-  if (map.getSource("openmaptiles") && !hasExtrusion) {
+async function addLayers() {
+  // Ensure 3D buildings from OpenStreetMap are extruded with realistic heights
+  if (map.getLayer("building-3d")) {
+    map.setPaintProperty("building-3d", "fill-extrusion-height", [
+      "coalesce",
+      ["get", "render_height"],
+      ["*", ["coalesce", ["get", "building:levels"], 2], 3.8],
+      8.5
+    ]);
+    map.setPaintProperty("building-3d", "fill-extrusion-base", ["coalesce", ["get", "render_min_height"], 0]);
+    map.setPaintProperty("building-3d", "fill-extrusion-color", css("--building") || "#d0d4d9");
+    map.setPaintProperty("building-3d", "fill-extrusion-opacity", 0.88);
+  } else if (map.getSource("openmaptiles")) {
     map.addLayer({
       id: "fs-buildings", type: "fill-extrusion", source: "openmaptiles", "source-layer": "building", minzoom: 14,
       paint: {
-        "fill-extrusion-color": css("--building"),
-        "fill-extrusion-height": ["coalesce", ["get", "render_height"], 8],
+        "fill-extrusion-color": css("--building") || "#d0d4d9",
+        "fill-extrusion-height": [
+          "coalesce",
+          ["get", "render_height"],
+          ["*", ["coalesce", ["get", "building:levels"], 2], 3.8],
+          8.5
+        ],
         "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
-        "fill-extrusion-opacity": 0.85
+        "fill-extrusion-opacity": 0.88
       }
     });
   }
+  // Initialize Sponge Infrastructure & Drainage System (Green, Blue, Gray)
+  await initSponge(map, CONFIG.dataBase);
   map.addSource("fs-risk-area", { type: "geojson", data: emptyFC });
   map.addLayer({ id: "fs-risk-area", type: "fill", source: "fs-risk-area", paint: {
     "fill-color": areaColor(), "fill-opacity": 0.3 } });
@@ -64,6 +89,9 @@ function addLayers() {
   map.addLayer({ id: "fs-roads-risk", type: "line", source: "fs-roads", filter: ["!=", ["get", "level"], "none"],
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": ["match", ["get", "level"], "high", css("--high"), css("--moderate")], "line-width": 6 } });
+
+  // Add Drainage Infrastructure layers directly above roads and flood risk
+  addDrainageLayers(map);
 
   map.addSource("fs-connector", { type: "geojson", data: emptyFC });
   map.addLayer({ id: "fs-connector", type: "line", source: "fs-connector", layout: { "line-cap": "round" },
@@ -171,6 +199,25 @@ function update(fromTick) {
   const sc = state.scenario, t = state.t, mode = state.mode, T = th(), { moderate, high } = T;
   const modeOk = e => mode === "walk" ? e.walk : e.drive;
 
+  // Update live sponge infrastructure & drainage systems (MSMA / JPS hydrologic modeling)
+  const curRain = state.hasRain && sc ? (sc.rainMmHr || 60) : 0;
+  updateSponge(t, curRain);
+  const spongeSummary = getTownshipSpongeSummary(t, curRain);
+  if (spongeSummary && ui.spongeStatusBadge) {
+    ui.spongeStatusBadge.textContent = spongeSummary.status.label;
+    ui.spongeStatusBadge.className = `sponge-badge ${spongeSummary.status.badge}`;
+    if (ui.spongeHudBar) {
+      ui.spongeHudBar.style.width = `${spongeSummary.overallPct}%`;
+      ui.spongeHudBar.style.backgroundColor = spongeSummary.status.color;
+    }
+    if (ui.spongeStorageText) {
+      ui.spongeStorageText.textContent = `${spongeSummary.overallPct}% (${spongeSummary.totalStoredM3.toLocaleString()} m³)`;
+    }
+    if (ui.spongeRainText) {
+      ui.spongeRainText.textContent = state.hasRain ? `${sc.name}` : "Dry";
+    }
+  }
+
   // Risk per road (looks ahead CONFIG.horizonMin minutes)
   const risk = new Map();
   for (const e of state.graph.edges.values()) risk.set(e.id, state.hasRain ? sc.risk(e.id, t) : 0);
@@ -273,6 +320,12 @@ function update(fromTick) {
   state.lastRouteKey = key; state.lastEdges = baseIds; state.lastNames = names;
   map.getSource("fs-route").setData(line);
   updateMeta();
+
+  // Evaluate & Render Residential Evacuation Decision
+  const evacDecision = getResidentialEvacuationDecision({
+    state, sa, sb, path, riskMap: risk, T, places: state.places
+  });
+  renderEvacuationDecisionCard(ui, evacDecision, ppsPlace => setTo(ppsPlace, true));
 }
 
 function showNoRoute(title, sub, warn, fromTick, tickToast) {
@@ -283,6 +336,19 @@ function showNoRoute(title, sub, warn, fromTick, tickToast) {
   if (fromTick && state.lastRouteKey && tickToast) toast(tickToast);
   state.lastRouteKey = null; state.lastEdges = [];
   updateMeta();
+
+  if (state.graph && state.from && state.to) {
+    const g = state.graph, mode = state.mode, T = th();
+    const sa = snapToEdge(g, state.from.coord, mode), sb = snapToEdge(g, state.to.coord, mode);
+    const risk = new Map();
+    if (state.hasRain && state.scenario) {
+      for (const e of g.edges.values()) risk.set(e.id, state.scenario.risk(e.id, state.t));
+    }
+    const evacDecision = getResidentialEvacuationDecision({
+      state, sa, sb, path: null, riskMap: risk, T, places: state.places
+    });
+    renderEvacuationDecisionCard(ui, evacDecision, ppsPlace => setTo(ppsPlace, true));
+  }
 }
 
 function updateMeta() {
@@ -345,9 +411,36 @@ function riskNote() {
 $("riskNote").textContent = riskNote();
 document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.mode === state.mode)));
 
+function set3DMode(enabled) {
+  const heightExpr = enabled ? [
+    "coalesce",
+    ["get", "render_height"],
+    ["*", ["coalesce", ["get", "building:levels"], 2], 3.8],
+    8.5
+  ] : 0;
+  if (map.getLayer("building-3d")) {
+    map.setPaintProperty("building-3d", "fill-extrusion-height", heightExpr);
+  }
+  if (map.getLayer("fs-buildings")) {
+    map.setPaintProperty("fs-buildings", "fill-extrusion-height", heightExpr);
+  }
+  setSpongeVisible(enabled);
+  if (ui.spongeHud) ui.spongeHud.style.opacity = enabled ? "1" : "0.7";
+}
+
 const cam3d = $("cam3d"), camTop = $("camTop");
-cam3d.addEventListener("click", () => { cam3d.setAttribute("aria-pressed", "true"); camTop.setAttribute("aria-pressed", "false"); map.easeTo({ pitch: CONFIG.pitch, bearing: CONFIG.bearing }); });
-camTop.addEventListener("click", () => { camTop.setAttribute("aria-pressed", "true"); cam3d.setAttribute("aria-pressed", "false"); map.easeTo({ pitch: 0, bearing: 0 }); });
+cam3d.addEventListener("click", () => {
+  cam3d.setAttribute("aria-pressed", "true");
+  camTop.setAttribute("aria-pressed", "false");
+  map.easeTo({ pitch: CONFIG.pitch, bearing: CONFIG.bearing });
+  set3DMode(true);
+});
+camTop.addEventListener("click", () => {
+  camTop.setAttribute("aria-pressed", "true");
+  cam3d.setAttribute("aria-pressed", "false");
+  map.easeTo({ pitch: 0, bearing: 0 });
+  set3DMode(false);
+});
 
 // Live rainfall (off by default): switch to the matching scenario and run in real time.
 startLiveRain(mm => {

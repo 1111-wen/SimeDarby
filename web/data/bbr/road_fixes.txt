@@ -1,0 +1,418 @@
+# FloodSafe Route - Manual Road Property Fixes
+# Date: 2026-10-20
+# Total IDs changed: 406
+# Reason: OpenStreetMap access=private tags on gated/guarded neighborhoods wrongly flagged drivable roads as drive=false.
+# Action: Changed 'drive': false -> 'drive': true on residential and neighborhood service roads.
+# IDs preserved, geometry preserved.
+
+## Summary of Changed IDs:
+e115, e188, e189, e190, e191, e192, e193, e199, e200, e201, e206, e207, e212, e213, e219, e220, e226, e227, e230, e231, e240, e304, e305, e306, e314, e315, e316, e317, e318, e319, e320, e343, e352, e353, e354, e355, e356, e357, e358, e359, e360, e361, e362, e363, e364, e365, e366, e367, e368, e369, e370, e371, e372, e373, e374, e375, e376, e377, e378, e379, e380, e381, e382, e383, e384, e385, e386, e387, e388, e389, e390, e391, e392, e393, e394, e395, e396, e397, e398, e399, e400, e401, e402, e403, e404, e405, e408, e409, e410, e411, e412, e413, e424, e425, e426, e427, e428, e429, e436, e438, e517, e518, e519, e520, e534, e535, e536, e537, e538, e539, e540, e541, e542, e543, e544, e545, e546, e547, e548, e549, e550, e551, e552, e553, e554, e555, e556, e557, e558, e559, e560, e561, e562, e563, e564, e565, e566, e567, e568, e569, e570, e571, e572, e573, e574, e575, e576, e577, e578, e579, e580, e581, e582, e583, e584, e585, e586, e587, e588, e589, e590, e591, e592, e593, e802, e864, e988, e1016, e1294, e1295, e1296, e1297, e1298, e1299, e1300, e1301, e1302, e1303, e1304, e1305, e1306, e1307, e1308, e1309, e1310, e1311, e1312, e1313, e1314, e1315, e1316, e1317, e1318, e1319, e1320, e1321, e1322, e1323, e1324, e1325, e1326, e1327, e1328, e1329, e1330, e1331, e1332, e1333, e1334, e1335, e1336, e1337, e1338, e1339, e1340, e1341, e1342, e1343, e1375, e1384, e1402, e1403, e1404, e1405, e1406, e1407, e1408, e1409, e1410, e1411, e1412, e1413, e1414, e1415, e1416, e1417, e1418, e1419, e1420, e1421, e1423, e1424, e1425, e1426, e1427, e1428, e1429, e1430, e1431, e1432, e1433, e1434, e1435, e1436, e1437, e1438, e1439, e1440, e1441, e1442, e1443, e1444, e1445, e1451, e1452, e1453, e1487, e1488, e1489, e1490, e1491, e1492, e1493, e1494, e1495, e1496, e1497, e1498, e1499, e1500, e1501, e1502, e1503, e1504, e1505, e1506, e1507, e1508, e1509, e1510, e1511, e1512, e1513, e1514, e1515, e1516, e1517, e1518, e1519, e1520, e1521, e1522, e1523, e1524, e1525, e1526, e1527, e1528, e1529, e1530, e1531, e1532, e1533, e1540, e1541, e1542, e1543, e1544, e1545, e1546, e1547, e1548, e1549, e1550, e1552, e1553, e1554, e1555, e1556, e1557, e1558, e1559, e1560, e1561, e1562, e1565, e1566, e1567, e1568, e1569, e1570, e1571, e1572, e1573, e1575, e1576, e1578, e1580, e1581, e1582, e1583, e1584, e1585, e1586, e1587, e1588, e1589, e1590, e1591, e1610, e1611, e1612, e1613, e1614, e1615, e1616, e1617, e1618, e1619, e1620, e1621, e1622, e1623, e1624, e1626, e1627, e1629, e1668, e1669, e1670, e1671, e1672, e1673, e1674, e1675, e1676, e1677, e1678, e1679, e1680, e1681, e1682, e1683, e1684, e1685, e1686, e1687, e1688, e1689, e1690, e1691, e1692, e1693, e1694, e1695, e1696
+
+## Detailed List:
+ID	Highway	Length(m)	Oneway	Name
+e115	service	276.2	False	Unnamed road
+e188	residential	58.9	False	Aman Perdana 6A/KU 5
+e189	residential	288.7	False	Aman Perdana 6K/KU 5
+e190	residential	29.7	False	Aman Perdana 6A/KU 5
+e191	residential	235.7	False	Aman Perdana 6J/KU 5
+e192	residential	58.3	False	Aman Perdana 6A/KU 5
+e193	residential	57.9	False	Aman Perdana 6L/KU 5
+e199	residential	235.5	False	Aman Perdana 6H/KU 5
+e200	residential	8.5	False	Aman Perdana 6A/KU 5
+e201	residential	289.5	False	Aman Perdana 6G/KU 5
+e206	residential	50.6	False	Aman Perdana 6A/KU 5
+e207	residential	60.4	False	Aman Perdana 6A/KU 5
+e212	residential	59.4	False	Aman Perdana 6A/KU 5
+e213	residential	244.1	False	Aman Perdana 6F/KU 5
+e219	residential	167.2	False	Aman Perdana 6E/KU 5
+e220	residential	57.6	False	Aman Perdana 6A/KU 5
+e226	residential	165.9	False	Aman Perdana 6D/KU 5
+e227	residential	57.8	False	Aman Perdana 6A/KU 5
+e230	residential	128.1	False	Aman Perdana 6C/KU 5
+e231	residential	39.2	False	Aman Perdana 6A/KU 5
+e240	residential	137.2	False	Aman Perdana 6B/KU 5
+e304	residential	57.3	False	Unnamed road
+e305	residential	68.1	False	Unnamed road
+e306	residential	61.1	False	Jalan Makyong 2F/KU5
+e314	residential	61.3	False	Jalan Makyong 2G/KU5
+e315	residential	59.2	False	Unnamed road
+e316	residential	96.8	False	Jalan Makyong 2G/KU5
+e317	residential	149.6	False	Jalan Makyong 2H/KU5
+e318	residential	151.0	False	Jalan Makyong 2F/KU5
+e319	residential	62.0	False	Jalan Makyong 2H/KU5
+e320	residential	64.0	False	Unnamed road
+e343	residential	20.5	False	Unnamed road
+e352	residential	104.6	False	Unnamed road
+e353	residential	61.6	False	Unnamed road
+e354	residential	17.3	False	Jalan Makyong 4G/KU5
+e355	residential	56.0	False	Jalan Makyong 4G/KU5
+e356	residential	59.0	False	Unnamed road
+e357	residential	56.9	False	Jalan Makyong 4E/KU5
+e358	residential	104.4	False	Unnamed road
+e359	residential	56.2	False	Unnamed road
+e360	residential	63.3	False	Unnamed road
+e361	residential	55.9	False	Unnamed road
+e362	residential	59.1	False	Unnamed road
+e363	residential	63.2	False	Unnamed road
+e364	residential	63.5	False	Unnamed road
+e365	residential	111.7	False	Unnamed road
+e366	residential	54.2	False	Unnamed road
+e367	residential	56.9	False	Jalan Makyong 4F/KU 5
+e368	residential	94.8	False	Unnamed road
+e369	residential	56.4	False	Jalan Makyong 4D/KU5
+e370	residential	18.1	False	Jalan Makyong 4D/KU5
+e371	residential	111.9	False	Jalan Makyong 4H/KU5
+e372	service	62.6	False	Unnamed road
+e373	residential	59.1	False	Unnamed road
+e374	residential	56.7	False	Unnamed road
+e375	residential	63.7	False	Jalan Makyong 2M/KU5
+e376	residential	105.0	False	Jalan Makyong 4H/KU5
+e377	residential	58.8	False	Jalan Makyong 4G/KU5
+e378	service	61.5	False	Unnamed road
+e379	residential	57.0	False	Jalan Makyong 2M/KU5
+e380	residential	59.3	False	Unnamed road
+e381	residential	94.4	False	Jalan Makyong 4B/KU5
+e382	residential	57.3	False	Jalan Makyong 4D/KU5
+e383	service	59.4	False	Unnamed road
+e384	residential	59.6	False	Unnamed road
+e385	residential	88.2	False	Jalan Makyong 4B/KU5
+e386	residential	141.5	False	Unnamed road
+e387	residential	63.8	False	Jalan Makyong 2N/KU5
+e388	residential	117.2	False	Unnamed road
+e389	residential	113.1	False	Jalan Makyong 4J/KU5
+e390	service	62.2	False	Unnamed road
+e391	residential	59.9	False	Unnamed road
+e392	residential	104.6	False	Jalan Makyong 4J/KU5
+e393	residential	61.3	False	Jalan Makyong 4J/KU5
+e394	service	60.2	False	Unnamed road
+e395	residential	56.8	False	Jalan Makyong 2N/KU5
+e396	residential	58.6	False	Unnamed road
+e397	residential	59.6	False	Jalan Makyong 4E/KU5
+e398	residential	59.3	False	Jalan Makyong 4E/KU5
+e399	residential	59.5	False	Jalan Makyong 4C/KU5
+e400	residential	94.2	False	Jalan Makyong 4C/KU5
+e401	service	61.2	False	Unnamed road
+e402	residential	60.1	False	Jalan Makyong 4F/KU 5
+e403	residential	58.2	False	Jalan Makyong 4F/KU 5
+e404	residential	89.0	False	Jalan Makyong 4C/KU5
+e405	residential	144.3	False	Unnamed road
+e408	residential	57.0	False	Unnamed road
+e409	residential	61.6	False	Unnamed road
+e410	residential	112.2	False	Unnamed road
+e411	residential	62.6	False	Unnamed road
+e412	residential	103.1	False	Unnamed road
+e413	residential	58.6	False	Unnamed road
+e424	service	115.5	False	Unnamed road
+e425	service	306.2	False	Jalan Aman Perdana 10E/KU 5
+e426	service	125.2	False	Unnamed road
+e427	service	12.4	False	Unnamed road
+e428	service	25.8	False	Jalan Aman Perdana 10D/KU 5
+e429	service	47.7	False	Jalan Aman Perdana 10D/KU 5
+e436	service	52.4	False	Unnamed road
+e438	service	126.6	False	Unnamed road
+e517	residential	104.8	False	Unnamed road
+e518	service	60.0	False	Unnamed road
+e519	service	58.9	False	Unnamed road
+e520	service	55.2	False	Unnamed road
+e534	residential	56.3	False	Jalan Makyong 2T/KU5
+e535	residential	64.8	False	Unnamed road
+e536	residential	61.4	False	Jalan Makyong 2U/KU5
+e537	residential	64.8	False	Jalan Makyong 2U/KU5
+e538	residential	75.1	False	Unnamed road
+e539	residential	15.3	False	Unnamed road
+e540	residential	13.9	False	Unnamed road
+e541	residential	55.9	False	Jalan Makyong 2K/KU5
+e542	residential	10.6	False	Unnamed road
+e543	residential	56.7	False	Unnamed road
+e544	residential	99.4	False	Jalan Makyong 2F/KU5
+e545	residential	58.0	False	Unnamed road
+e546	residential	100.3	False	Jalan Makyong 2G/KU5
+e547	residential	57.2	False	Unnamed road
+e548	residential	100.1	False	Jalan Makyong 2H/KU5
+e549	residential	118.1	False	Jalan Makyong 2F/KU5
+e550	residential	58.2	False	Unnamed road
+e551	residential	117.4	False	Jalan Makyong 2G/KU5
+e552	residential	58.3	False	Unnamed road
+e553	residential	118.4	False	Jalan Makyong 2H/KU5
+e554	residential	58.1	False	Unnamed road
+e555	residential	65.8	False	Jalan Makyong 2E/KU5
+e556	residential	59.2	False	Unnamed road
+e557	residential	63.9	False	Unnamed road
+e558	residential	51.5	False	Jalan Makyong 2T/KU5
+e559	residential	63.3	False	Jalan Makyong 2J/KU5
+e560	residential	65.2	False	Jalan Makyong 2J/KU5
+e561	residential	49.7	False	Jalan Makyong 2K/KU5
+e562	residential	50.9	False	Unnamed road
+e563	residential	49.4	False	Unnamed road
+e564	service	55.4	False	Unnamed road
+e565	residential	62.4	False	Jalan Makyong 2M/KU5
+e566	residential	63.3	False	Unnamed road
+e567	residential	13.5	False	Unnamed road
+e568	service	56.0	False	Unnamed road
+e569	residential	62.2	False	Jalan Makyong 2M/KU5
+e570	service	58.2	False	Unnamed road
+e571	residential	68.9	False	Unnamed road
+e572	service	58.1	False	Unnamed road
+e573	residential	70.8	False	Jalan Makyong 2M/KU5
+e574	service	56.7	False	Unnamed road
+e575	service	58.7	False	Unnamed road
+e576	service	57.0	False	Unnamed road
+e577	residential	70.1	False	Jalan Makyong 2N/KU5
+e578	service	58.4	False	Unnamed road
+e579	residential	69.5	False	Unnamed road
+e580	residential	62.6	False	Jalan Makyong 2N/KU5
+e581	service	58.0	False	Unnamed road
+e582	residential	62.8	False	Unnamed road
+e583	residential	62.7	False	Jalan Makyong 2N/KU5
+e584	service	57.8	False	Unnamed road
+e585	residential	63.1	False	Unnamed road
+e586	service	58.6	False	Unnamed road
+e587	residential	95.1	False	Unnamed road
+e588	service	57.0	False	Unnamed road
+e589	service	59.2	False	Unnamed road
+e590	service	58.9	False	Unnamed road
+e591	residential	61.6	False	Unnamed road
+e592	residential	65.2	False	Unnamed road
+e593	residential	11.4	False	Unnamed road
+e802	service	35.3	False	Unnamed road
+e864	service	272.4	False	Unnamed road
+e988	residential	60.7	False	Unnamed road
+e1016	service	100.5	False	Unnamed road
+e1294	residential	68.8	False	Jalan Ulek Mayang 1F/KU5
+e1295	residential	34.3	False	Jalan Ulek Mayang 1/KU5
+e1296	residential	31.9	False	Jalan Ulek Mayang 1/KU5
+e1297	residential	61.1	False	Jalan Ulek Mayang 1E/KU5
+e1298	residential	33.5	False	Unnamed road
+e1299	residential	36.0	False	Unnamed road
+e1300	residential	67.8	False	Jalan Ulek Mayang 1E/KU5
+e1301	residential	33.5	False	Jalan Ulek Mayang 1/KU5
+e1302	residential	33.2	False	Jalan Ulek Mayang 1/KU5
+e1303	residential	61.1	False	Jalan Ulek Mayang 1D/KU5
+e1304	residential	32.7	False	Unnamed road
+e1305	residential	36.4	False	Unnamed road
+e1306	residential	68.2	False	Jalan Ulek Mayang 1D/KU5
+e1307	residential	33.1	False	Jalan Ulek Mayang 1/KU5
+e1308	residential	32.3	False	Jalan Ulek Mayang 1/KU5
+e1309	residential	68.4	False	Jalan Ulek Mayang 1C/KU5
+e1310	residential	33.9	False	Jalan Ulek Mayang 1/KU5
+e1311	residential	33.0	False	Jalan Ulek Mayang 1/KU5
+e1312	residential	61.7	False	Jalan Ulek Mayang 1B/KU5
+e1313	residential	34.1	False	Unnamed road
+e1314	residential	35.5	False	Unnamed road
+e1315	residential	67.7	False	Jalan Ulek Mayang 1B/KU5
+e1316	residential	32.4	False	Jalan Ulek Mayang 1/KU5
+e1317	residential	35.8	False	Jalan Ulek Mayang 1/KU5
+e1318	residential	43.6	False	Jalan Ulek Mayang 1A/KU5
+e1319	residential	35.8	False	Jalan Ulek Mayang 1/KU5
+e1320	residential	46.6	False	Jalan Ulek Mayang 2/KU5
+e1321	residential	12.2	False	Jalan Ulek Mayang 2/KU5
+e1322	residential	47.8	False	Unnamed road
+e1323	residential	35.2	False	Jalan Ulek Mayang 2/KU5
+e1324	residential	67.5	False	Jalan Ulek Mayang 2/KU5
+e1325	residential	51.8	False	Jalan Ulek Mayang 2A/KU5
+e1326	residential	32.6	False	Jalan Ulek Mayang 2/KU5
+e1327	residential	70.3	False	Jalan Ulek Mayang 2B/KU5
+e1328	residential	34.2	False	Jalan Ulek Mayang 2/KU5
+e1329	residential	33.5	False	Jalan Ulek Mayang 2/KU5
+e1330	residential	32.1	False	Jalan Ulek Mayang 2/KU5
+e1331	residential	69.5	False	Jalan Ulek Mayang 2C/KU5
+e1332	residential	33.3	False	Jalan Ulek Mayang 2/KU5
+e1333	residential	32.8	False	Jalan Ulek Mayang 2/KU5
+e1334	residential	68.6	False	Jalan Ulek Mayang 2D/KU5
+e1335	residential	61.5	False	Jalan Ulek Mayang 2E/KU5
+e1336	residential	33.5	False	Unnamed road
+e1337	residential	93.9	False	Unnamed road
+e1338	residential	60.9	False	Jalan Ulek Mayang 2C/KU5
+e1339	residential	33.3	False	Unnamed road
+e1340	residential	34.9	False	Unnamed road
+e1341	residential	59.1	False	Jalan Ulek Mayang 2B/KU5
+e1342	residential	35.7	False	Unnamed road
+e1343	residential	32.9	False	Jalan Ulek Mayang 2A/KU5
+e1375	residential	48.9	False	Unnamed road
+e1384	residential	68.4	False	Unnamed road
+e1402	residential	29.9	False	Unnamed road
+e1403	residential	9.6	False	Unnamed road
+e1404	residential	120.2	False	Jalan Ulek Mayang 3B/KU5
+e1405	residential	41.1	False	Unnamed road
+e1406	residential	157.8	False	Jalan Ulek Mayang 3A/KU5
+e1407	residential	42.2	False	Unnamed road
+e1408	residential	83.4	False	Jalan Ulek Mayang 3C/KU5
+e1409	residential	66.7	False	Unnamed road
+e1410	residential	84.3	False	Jalan Ulek Mayang 3D/KU5
+e1411	residential	116.7	False	Jalan Ulek Mayang 3E/KU5
+e1412	residential	35.6	False	Unnamed road
+e1413	residential	100.7	False	Jalan Ulek Mayang 3D/KU5
+e1414	residential	71.1	False	Jalan Ulek Mayang 3C/KU5
+e1415	residential	85.4	False	Jalan Ulek Mayang 3C/KU5
+e1416	residential	87.7	False	Jalan Ulek Mayang 3C/KU5
+e1417	service	34.8	False	Unnamed road
+e1418	service	63.7	False	Unnamed road
+e1419	residential	87.5	False	Jalan Ulek Mayang 3B/KU5
+e1420	service	32.6	False	Unnamed road
+e1421	service	32.4	False	Unnamed road
+e1423	residential	117.5	False	Unnamed road
+e1424	residential	104.1	False	Unnamed road
+e1425	residential	67.1	False	Unnamed road
+e1426	residential	91.7	False	Unnamed road
+e1427	residential	123.7	False	Unnamed road
+e1428	residential	66.9	False	Unnamed road
+e1429	residential	86.7	False	Unnamed road
+e1430	residential	63.7	False	Unnamed road
+e1431	residential	157.8	False	Unnamed road
+e1432	residential	86.3	False	Unnamed road
+e1433	residential	79.7	False	Unnamed road
+e1434	residential	101.1	False	Unnamed road
+e1435	residential	66.8	False	Unnamed road
+e1436	residential	89.4	False	Jalan Ulek Mayang 4E/KU5
+e1437	residential	65.7	False	Unnamed road
+e1438	residential	101.0	False	Jalan Ulek Mayang 4E/KU5
+e1439	residential	66.0	False	Unnamed road
+e1440	residential	87.6	False	Unnamed road
+e1441	residential	167.3	False	Unnamed road
+e1442	residential	101.5	False	Unnamed road
+e1443	residential	67.9	False	Unnamed road
+e1444	residential	65.3	False	Unnamed road
+e1445	residential	312.2	False	Unnamed road
+e1451	residential	61.7	False	Jalan Ulek Mayang 1G/KU5
+e1452	residential	34.9	False	Jalan Ulek Mayang 1G/KU5
+e1453	residential	94.8	False	Unnamed road
+e1487	residential	68.4	False	Unnamed road
+e1488	residential	64.5	False	Unnamed road
+e1489	residential	66.4	False	Unnamed road
+e1490	residential	65.9	False	Unnamed road
+e1491	residential	58.4	False	Unnamed road
+e1492	residential	85.7	False	Unnamed road
+e1493	residential	88.4	False	Unnamed road
+e1494	residential	31.0	False	Unnamed road
+e1495	residential	35.1	False	Unnamed road
+e1496	residential	39.6	False	Jalan Ulek Mayang 3B/KU5
+e1497	residential	88.0	False	Unnamed road
+e1498	service	30.5	False	Unnamed road
+e1499	residential	125.5	False	Jalan Ulek Mayang 3A/KU5
+e1500	residential	101.0	False	Unnamed road
+e1501	residential	58.2	False	Unnamed road
+e1502	residential	61.7	False	Unnamed road
+e1503	residential	33.5	False	Unnamed road
+e1504	residential	33.6	False	Unnamed road
+e1505	residential	95.0	False	Jalan Ulek Mayang 1A/KU5
+e1506	residential	32.4	False	Unnamed road
+e1507	residential	69.7	False	Unnamed road
+e1508	residential	66.3	False	Unnamed road
+e1509	residential	32.4	False	Unnamed road
+e1510	residential	32.5	False	Unnamed road
+e1511	residential	61.8	False	Unnamed road
+e1512	residential	60.2	False	Unnamed road
+e1513	residential	33.2	False	Unnamed road
+e1514	residential	34.0	False	Unnamed road
+e1515	residential	95.7	False	Jalan Ulek Mayang 2A/KU5
+e1516	residential	68.3	False	Unnamed road
+e1517	residential	36.3	False	Jalan Ulek Mayang 2/KU5
+e1518	residential	67.2	False	Unnamed road
+e1519	residential	40.9	False	Jalan Ulek Mayang 2D/KU5
+e1520	residential	69.3	False	Unnamed road
+e1521	residential	55.3	False	Jalan Ulek Mayang 2D/KU5
+e1522	residential	33.1	False	Unnamed road
+e1523	residential	60.9	False	Unnamed road
+e1524	residential	34.5	False	Unnamed road
+e1525	residential	32.2	False	Unnamed road
+e1526	residential	32.9	False	Unnamed road
+e1527	residential	32.1	False	Unnamed road
+e1528	residential	59.5	False	Jalan Ulek Mayang 2E/KU5
+e1529	residential	33.4	False	Unnamed road
+e1530	residential	93.4	False	Unnamed road
+e1531	residential	117.8	False	Unnamed road
+e1532	residential	73.1	False	Unnamed road
+e1533	service	66.7	False	Unnamed road
+e1540	residential	104.3	False	Unnamed road
+e1541	residential	223.6	False	Unnamed road
+e1542	service	66.3	False	Unnamed road
+e1543	residential	65.9	False	Unnamed road
+e1544	service	139.5	False	Unnamed road
+e1545	residential	107.0	False	Unnamed road
+e1546	service	67.3	False	Unnamed road
+e1547	residential	179.2	False	Unnamed road
+e1548	residential	65.8	False	Unnamed road
+e1549	residential	126.0	False	Unnamed road
+e1550	residential	67.4	False	Unnamed road
+e1552	service	66.5	False	Unnamed road
+e1553	residential	67.5	False	Unnamed road
+e1554	residential	104.8	False	Unnamed road
+e1555	residential	80.4	False	Unnamed road
+e1556	residential	106.5	False	Unnamed road
+e1557	residential	76.8	False	Unnamed road
+e1558	residential	48.2	False	Unnamed road
+e1559	residential	106.2	False	Unnamed road
+e1560	residential	168.0	False	Unnamed road
+e1561	residential	66.5	False	Unnamed road
+e1562	residential	97.3	False	Unnamed road
+e1565	residential	34.0	False	Unnamed road
+e1566	residential	61.7	False	Unnamed road
+e1567	residential	84.5	False	Unnamed road
+e1568	residential	75.1	False	Unnamed road
+e1569	residential	72.4	False	Unnamed road
+e1570	residential	102.3	False	Unnamed road
+e1571	residential	174.0	False	Unnamed road
+e1572	residential	66.2	False	Unnamed road
+e1573	residential	65.7	False	Unnamed road
+e1575	residential	66.9	False	Unnamed road
+e1576	residential	61.5	False	Unnamed road
+e1578	residential	66.2	False	Unnamed road
+e1580	residential	67.1	False	Unnamed road
+e1581	residential	81.8	False	Unnamed road
+e1582	residential	64.1	False	Unnamed road
+e1583	residential	93.1	False	Unnamed road
+e1584	residential	96.5	False	Unnamed road
+e1585	residential	237.4	False	Unnamed road
+e1586	residential	62.9	False	Unnamed road
+e1587	residential	69.6	False	Unnamed road
+e1588	residential	73.5	False	Unnamed road
+e1589	residential	61.2	False	Unnamed road
+e1590	residential	65.5	False	Unnamed road
+e1591	residential	66.0	False	Unnamed road
+e1610	residential	66.5	False	Unnamed road
+e1611	residential	166.4	False	Unnamed road
+e1612	residential	153.5	False	Unnamed road
+e1613	residential	127.1	False	Unnamed road
+e1614	residential	64.3	False	Unnamed road
+e1615	residential	68.8	False	Unnamed road
+e1616	residential	112.4	False	Unnamed road
+e1617	residential	118.6	False	Unnamed road
+e1618	residential	68.4	False	Unnamed road
+e1619	service	34.0	False	Unnamed road
+e1620	service	64.8	False	Unnamed road
+e1621	residential	84.8	False	Jalan Ulek Mayang 3D/KU5
+e1622	service	34.1	False	Unnamed road
+e1623	residential	84.2	False	Jalan Ulek Mayang 3E/KU5
+e1624	service	33.6	False	Unnamed road
+e1626	service	35.0	False	Unnamed road
+e1627	service	32.6	False	Unnamed road
+e1629	residential	126.5	False	Jalan Ulek Mayang 3E/KU5
+e1668	residential	33.5	False	Unnamed road
+e1669	residential	32.1	False	Unnamed road
+e1670	residential	68.3	False	Unnamed road
+e1671	residential	61.3	False	Unnamed road
+e1672	residential	32.7	False	Unnamed road
+e1673	residential	68.0	False	Unnamed road
+e1674	residential	68.9	False	Unnamed road
+e1675	residential	55.6	False	Jalan Ulek Mayang 1C/KU5
+e1676	residential	34.0	False	Unnamed road
+e1677	residential	32.5	False	Unnamed road
+e1678	residential	68.3	False	Unnamed road
+e1679	residential	60.6	False	Unnamed road
+e1680	residential	33.1	False	Unnamed road
+e1681	residential	33.1	False	Unnamed road
+e1682	residential	68.0	False	Unnamed road
+e1683	residential	68.7	False	Unnamed road
+e1684	residential	61.4	False	Jalan Ulek Mayang 1F/KU5
+e1685	residential	33.8	False	Unnamed road
+e1686	residential	32.0	False	Unnamed road
+e1687	residential	69.8	False	Unnamed road
+e1688	residential	68.6	False	Unnamed road
+e1689	residential	55.5	False	Jalan Ulek Mayang 1G/KU5
+e1690	residential	33.4	False	Unnamed road
+e1691	residential	37.1	False	Jalan Ulek Mayang 1F/KU5
+e1692	residential	41.8	False	Jalan Ulek Mayang 1G/KU5
+e1693	residential	32.4	False	Unnamed road
+e1694	residential	39.0	False	Unnamed road
+e1695	residential	42.9	False	Jalan Ulek Mayang 1C/KU5
+e1696	residential	89.1	False	Unnamed road

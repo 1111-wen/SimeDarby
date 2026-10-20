@@ -3,7 +3,26 @@
     {
       "id": "dry",
       "file": "dry.json",
-      "rain_mm_hr": 0
+      "rain_mm_hr": 0,
+      "name": "No rain (baseline)"
+    },
+    {
+      "id": "moderate",
+      "file": "moderate.json",
+      "rain_mm_hr": 30,
+      "name": "Moderate rain (~30 mm/h)"
+    },
+    {
+      "id": "heavy",
+      "file": "heavy.json",
+      "rain_mm_hr": 60,
+      "name": "Heavy rain (~60 mm/h)"
+    },
+    {
+      "id": "extreme",
+      "file": "extreme.json",
+      "rain_mm_hr": 90,
+      "name": "Extreme storm (~90 mm/h, 100-yr ARI)"
     }
   ]
 }
