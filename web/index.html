@@ -159,13 +159,6 @@
           <span><span class="sw" style="background:#2e7d32"></span>🌿 Green (Parks & Gardens)</span>
         </div>
 
-        <div class="rain">
-          <button type="button" class="primary" id="rainBtn" aria-pressed="false">Start demo rain</button>
-          <select id="scenarioSel" aria-label="Rain scenario"></select>
-          <span class="clock" id="clock">No rain</span>
-        </div>
-        <input type="range" class="timeline" id="time" min="0" max="180" step="1" value="0" aria-label="Minutes since rain started (demo timeline)">
-
         <ol class="steps" id="steps" aria-label="Directions"></ol>
         <p class="meta" id="meta"></p>
 
@@ -178,6 +171,13 @@
         </details>
       </div>
     </section>
+    <!-- Bottom of the page: Storm Simulation Controls in ONE ROW -->
+    <div class="bottom-bar" id="bottomBar" role="region" aria-label="Storm simulation controls">
+      <button type="button" class="primary rain-btn" id="rainBtn" aria-pressed="false">Start demo rain</button>
+      <select id="scenarioSel" aria-label="Rain scenario"></select>
+      <input type="range" class="timeline" id="time" min="0" max="180" step="1" value="0" aria-label="Minutes since rain started (demo timeline)">
+      <span class="clock" id="clock">No rain</span>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
