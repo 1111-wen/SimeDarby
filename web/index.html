@@ -19,6 +19,13 @@
   <div class="app">
     <div id="map" aria-label="Map showing flood risk and your route"></div>
 
+    <!-- Top Middle Current Time Display (Default 9:00 AM) -->
+    <div class="top-time-bar" id="topTimeBar" aria-label="Current time">
+      <span class="time-clock-icon">🕒</span>
+      <span class="time-label">Current Time:</span>
+      <strong class="time-value" id="topTimeVal">9:00 AM</strong>
+    </div>
+
     <form class="trip" id="trip" autocomplete="off">
       <span class="mark from" aria-hidden="true"></span>
       <input id="fromIn" list="places" aria-label="Starting point" placeholder="Your location">
@@ -57,10 +64,10 @@
         <span id="spongeRainText" style="color:var(--water); font-weight:600;">Dry</span>
       </div>
       <div class="sponge-hud-tags">
-        <span class="tag drain" title="RCBC storm culverts, U-drains and intake sumps">🚰 Drainage System</span>
-        <span class="tag green" title="Urban parks, gardens, green roofs, rain gardens">🌿 Green</span>
-        <span class="tag blue" title="Restored wetlands, retention basins, widened rivers">💧 Blue</span>
-        <span class="tag gray" title="Porous parking, underground cisterns">⚙️ Gray</span>
+        <button type="button" class="tag drain" id="tagDrain" title="Real-world engineered waterways and drainage network">🚰 Drainage System</button>
+        <button type="button" class="tag green" id="tagGreen" title="Real-world urban parks, green reserves and recreation grounds">🌿 Green</button>
+        <button type="button" class="tag blue" id="tagBlue" title="Real-world flood retention ponds and wetland lakes">💧 Blue</button>
+        <button type="button" class="tag gray" id="tagGray" title="Real-world concrete monsoon drains and RCBC culvert tunnels">⚙️ Gray</button>
       </div>
     </div>
 
@@ -71,93 +78,7 @@
       <div class="inner">
         <div class="routehead"><h1 id="eta">Loading…</h1><span id="dist"></span></div>
         <p class="routesub" id="routeSub"></p>
-                <p class="warn" id="warn" hidden></p>
-
-        <!-- Residential Evacuation Decision System -->
-        <div id="evacDecisionCard" class="evac-card" aria-label="Residential Evacuation Decision System">
-          <div class="evac-card-header">
-            <div class="evac-badge-row">
-              <span class="evac-badge badge-evac-stable" id="evacBadge">Conditions Stable — Access Clear</span>
-              <span class="evac-tti-pill" id="evacTtiPill" hidden>⏱️ Est. Flood in 20 min</span>
-            </div>
-            <p class="evac-action" id="evacAction">Loading evacuation recommendation...</p>
-          </div>
-
-          <!-- Current vs Predicted Condition Matrix -->
-          <div class="evac-grid">
-            <div class="evac-col current">
-              <div class="evac-col-head">
-                <span class="dot live"></span>
-                <strong>Current Condition</strong>
-                <span class="evac-time" id="evacCurTime">Now (+0 min)</span>
-              </div>
-              <div class="evac-metric">
-                <span class="metric-val" id="evacCurDepth">0.0 cm</span>
-                <span class="metric-status safe" id="evacCurStatus">Passable</span>
-              </div>
-              <p class="evac-note" id="evacCurNote">Road near your house is passable according to latest available data.</p>
-            </div>
-
-            <div class="evac-col predicted">
-              <div class="evac-col-head">
-                <span class="dot forecast"></span>
-                <strong>Predicted Condition</strong>
-                <span class="evac-time" id="evacPredTime">Next 20–30 min</span>
-              </div>
-              <div class="evac-metric">
-                <span class="metric-val" id="evacPredDepth">0.0 cm</span>
-                <span class="metric-status safe" id="evacPredStatus">Passable</span>
-              </div>
-              <p class="evac-note" id="evacPredNote">Model estimates road will remain passable.</p>
-            </div>
-          </div>
-
-          <!-- Route Safety Criteria & Evacuation Centre -->
-          <div class="evac-route-box">
-            <div class="evac-route-head">
-              <div class="evac-pps-info">
-                <span class="pps-icon">🏛️</span>
-                <div>
-                  <strong id="evacDestName">Masjid Bandar Bukit Raja (relief centre)</strong>
-                  <span class="pps-verified-tag" id="evacPpsTag">✓ Verified Evacuation Centre (PPS)</span>
-                </div>
-              </div>
-              <button type="button" class="btn-pps-switch" id="evacPpsBtn" hidden>Route to PPS</button>
-            </div>
-            <div class="evac-criteria-list" id="evacCriteriaList">
-              <span class="crit-item ok">✓ 0% High-risk roads (100% avoided)</span>
-              <span class="crit-item ok">✓ Safe emergency bypass corridor</span>
-              <span class="crit-item ok">✓ Verified shelter destination</span>
-            </div>
-          </div>
-
-          <!-- Prediction Confidence & Timestamp Bar -->
-          <div class="evac-meta-bar">
-            <div class="evac-meta-item">
-              <span class="meta-icon">🕒</span>
-              <span><strong>Forecast Generated:</strong> <span id="evacTimestamp">20 Oct 2026, 10:30 PM</span></span>
-            </div>
-            <div class="evac-meta-item">
-              <span class="meta-icon">📊</span>
-              <span><strong>Reliability:</strong> <span class="confidence-badge" id="evacConfidence">High (94%)</span></span>
-            </div>
-            <div class="evac-meta-sub" id="evacModelDesc">
-              HEC-RAS 2D Hydrodynamic Unsteady Flow · Calibrated with JPS Selangor Station telemetry
-            </div>
-          </div>
-        </div>
-
-        <div class="legend">
-          <span><span class="sw" style="background:var(--route)"></span>Your route</span>
-          <span><span class="sw" style="background:var(--moderate)"></span>Moderate risk</span>
-          <span><span class="sw" style="background:var(--high)"></span>High risk</span>
-          <span><span class="sw" style="background:var(--water)"></span>Floodwater</span>
-        </div>
-        <div class="legend sponge-legend">
-          <span><span class="sw" style="background:#00e5ff; border: 2px solid #001a33;"></span>🚰 Drainage Culverts & Sumps</span>
-          <span><span class="sw" style="background:#0288d1"></span>💧 Blue (Wetland Lakes)</span>
-          <span><span class="sw" style="background:#2e7d32"></span>🌿 Green (Parks & Gardens)</span>
-        </div>
+        <p class="warn" id="warn" hidden></p>
 
         <ol class="steps" id="steps" aria-label="Directions"></ol>
         <p class="meta" id="meta"></p>
@@ -171,12 +92,55 @@
         </details>
       </div>
     </section>
-    <!-- Bottom of the page: Storm Simulation Controls in ONE ROW -->
-    <div class="bottom-bar" id="bottomBar" role="region" aria-label="Storm simulation controls">
-      <button type="button" class="primary rain-btn" id="rainBtn" aria-pressed="false">Start demo rain</button>
-      <select id="scenarioSel" aria-label="Rain scenario"></select>
-      <input type="range" class="timeline" id="time" min="0" max="180" step="1" value="0" aria-label="Minutes since rain started (demo timeline)">
-      <span class="clock" id="clock">No rain</span>
+
+    <!-- Predict Button & Forecast Time Selection at Bottom Middle of the Page -->
+    <div class="predict-bar" id="predictBar" role="region" aria-label="Flood Prediction Controls">
+      <div class="predict-time-popup" id="predictTimePopup" hidden>
+        <div class="time-chips" role="radiogroup" aria-label="Forecast times">
+          <button type="button" class="time-chip" data-time="9:00 AM" data-min="0">9:00 AM</button>
+          <button type="button" class="time-chip active" data-time="9:30 AM" data-min="30">9:30 AM <span class="chip-status danger">Flooded</span></button>
+          <button type="button" class="time-chip" data-time="10:00 AM" data-min="60">10:00 AM <span class="chip-status danger">Flooded</span></button>
+          <button type="button" class="time-chip" data-time="10:30 AM" data-min="90">10:30 AM <span class="chip-status warning">Moderate</span></button>
+          <button type="button" class="time-chip" data-time="11:00 AM" data-min="120">11:00 AM <span class="chip-status safe">Safe</span></button>
+        </div>
+      </div>
+      <button type="button" class="predict-btn-main" id="predictBtn" aria-pressed="false" title="Toggle Flood Prediction">
+        <span class="predict-btn-icon">🔮</span>
+        <span class="predict-btn-label">Predict</span>
+      </button>
+    </div>
+
+    <!-- Bottom Right Corner: Legend Button & Popup -->
+    <div class="legend-corner" id="legendCorner">
+      <div class="legend-popup" id="legendPopup" hidden>
+        <div class="legend-popup-head">
+          <strong>Map Legend</strong>
+          <button type="button" class="legend-close-btn" id="legendCloseBtn" aria-label="Close legend">&times;</button>
+        </div>
+        <div class="legend-popup-content">
+          <div class="legend-row">
+            <span><span class="sw" style="background:var(--route)"></span>Your route (purple)</span>
+            <span><span class="sw" style="background:#b39ddb; border-bottom: 2px dashed #7c4dff;"></span>Suggested route (faded)</span>
+          </div>
+          <div class="legend-row">
+            <span><span class="sw" style="background:var(--moderate)"></span>Moderate risk</span>
+            <span><span class="sw" style="background:var(--high)"></span>High risk</span>
+            <span><span class="sw" style="background:var(--water)"></span>Floodwater</span>
+          </div>
+          <div class="legend-row">
+            <span><span class="sw" style="background:#0288d1"></span>💧 Blue (Retention Ponds)</span>
+            <span><span class="sw" style="background:#2e7d32"></span>🌿 Green (Parks & Green Reserves)</span>
+          </div>
+          <div class="legend-row">
+            <span><span class="sw" style="background:#37474f; border: 1.5px solid #212121;"></span>⚙️ Gray (Concrete Drains & RCBC Culverts)</span>
+            <span><span class="sw" style="background:#00e5ff; border: 1.5px solid #002244;"></span>🚰 Active Drainage Flow</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="legend-btn" id="legendBtn" aria-pressed="false" title="Toggle Map Legend">
+        <span class="legend-btn-icon">🗺️</span>
+        <span class="legend-btn-text">Legend</span>
+      </button>
     </div>
   </div>
 

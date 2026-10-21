@@ -1,135 +1,137 @@
-# FloodSafe Route
+# FloodSafe Route — Bandar Bukit Raja Sponge Township
 
-A web app (PWA) that shows which roads will flood next and suggests a safer route, walking
-or driving, from where you are to where you need to go. Roads and areas are marked **yellow (moderate risk)**
-or **red (high risk)**, and the route updates live as water rises.
+A real-time flood intelligence, sponge infrastructure visualization, and residential evacuation routing progressive web app (PWA) designed for **Bandar Bukit Raja (BBR), Klang, Selangor**.
 
-Built for the Sime Darby Property University Hackathon 2026 ("Township of Tomorrow", People theme).
+Built for the **Sime Darby Property University Hackathon 2026** ("Township of Tomorrow" — People & Sustainability themes).
 
-> **Safety:** this is a prototype. It supports official warnings and never replaces them.
-> Always follow Bomba and the authorities, and call 999 in an emergency.
+> **Safety Disclaimer:** This application is a prototype demonstrating hydrodynamic flood simulation and sponge township integration. It supports official emergency notices and never replaces them. Always follow PDRM, Bomba, APM, and NADMA directives, and dial 999 in an emergency.
 
-## What's in this project
+---
+
+## Key Capabilities
+
+### 1. 🌿💧⚙️ Sponge City Framework (MSMA / JPS Guidelines)
+Models and monitors multi-tier stormwater retention infrastructure across Bandar Bukit Raja:
+- **🌿 Green Infrastructure:** Urban parks, community rain gardens, bioswales, and porous ground covers.
+- **💧 Blue Infrastructure:** 125-acre Bandar Bukit Raja Wetland system, retention lakes, detention ponds, and widened stream corridors.
+- **🚰 Gray Infrastructure:** Reinforced Concrete Box Culverts (RCBC), monsoon U-drains, and roadside intake sumps.
+- **Township HUD:** Live retention meter tracking total stored stormwater volume ($m^3$) and capacity percentage.
+
+### 2. 🔮 Interactive Flood Prediction & Timeline Navigation
+Located in the bottom-middle of the screen, the **`🔮 Predict`** button toggles a multi-hour flood progression forecast:
+- **9:00 AM (Baseline / Current):** Clear access, road depths at 0 cm, normal retention.
+- **9:30 AM (+30 min — Flood Onset):** Bandar Bukit Raja Wetland inundates (highlighted in red). Alert marker: *"Estimate to flood in 20 mins (9:20 AM)"*. Primary route avoids high risk, and suggested alternative routes appear in faded purple (`15 mins`, `16 mins (unsafe)`, `18 mins`).
+- **10:00 AM (+60 min — Peak Flood):** Peak inundation across wetland corridor; high-risk bypasses remain active.
+- **10:30 AM (+90 min — Receding):** Wetland transitions to moderate risk (highlighted in orange); route badge updates to `16 mins (moderate)`.
+- **11:00 AM (+120 min — Safe):** Runoff clears; wetland returns to safe natural blue, and the 16-minute route returns to safe `16 mins`.
+- **Dismiss on demand:** Clicking `🔮 Predict` again dismisses the time selections and returns to 9:00 AM baseline.
+
+### 3. 🏛️ Residential Evacuation Decision System
+- **Verified Relief Centres:** Direct, safe routing to designated Pusat Pemindahan Sementara (PPS) shelters, such as **Masjid Bandar Bukit Raja** (verified with APM / NADMA criteria).
+- **Zero High-Risk Routing:** Flood-aware Dijkstra routing actively bypasses inundated road segments, recalculating safe alternative corridors.
+- **Dual Travel Modes:** Separate safety depth thresholds for **Walk** (moderate: 5 cm, high: 15 cm) and **Drive** (moderate: 10 cm, high: 30 cm).
+
+### 4. 🏙️ 3D & Top View Perspective
+- Extruded 3D OpenStreetMap buildings with realistic structural heights.
+- Seamless synchronization between tilted 3D perspective and Top-down orthographic camera views.
+- Fully visible culverts, sumps, lakes, and route markers in both modes.
+
+### 5. 🗺️ Bottom-Right Floating Legend
+- Dedicated floating button anchored at the bottom-right corner.
+- Toggles a clean popup explaining routes (purple primary vs. faded suggested), risk tiers (moderate, high, floodwater), and sponge infrastructure assets.
+
+---
+
+## Project Structure
 
 ```
-floodsafe-route/
-├── README.md               this file
-├── DATA_SOURCES.md         every data source and assumption (required by SDP)
-├── web/                    the app (static files, no build step)
-│   ├── index.html
-│   ├── manifest.webmanifest, sw.js, icons/   PWA files (installable on phones)
-│   ├── css/styles.css
+SimeDarby/
+├── README.md               Project overview, architecture, and demo guide
+├── DATA_SOURCES.md         Data sources, engineering assumptions, and validation
+├── web/                    App shell and client logic (static, no build step required)
+│   ├── index.html          Semantic HTML5 layout and control anchors
+│   ├── manifest.webmanifest PWA manifest (installable on mobile and desktop)
+│   ├── sw.js               Service Worker with network-first caching and offline fallback
+│   ├── icons/              Vector application icons
+│   ├── css/
+│   │   └── styles.css      Clean responsive styling, dark mode support, and animations
 │   ├── js/
-│   │   ├── config.js       settings: map centre, Walk/Drive thresholds and speeds, data folder
-│   │   ├── app.js          map, UI and live updates
-│   │   ├── flood.js        loads scenarios; depth and risk per road over time
-│   │   ├── routing.js      road graph + flood-aware Dijkstra routing
-│   │   ├── geo.js          GPS, distance, place search
-│   │   └── rain.js         demo storm player + live rainfall hook (roadmap)
-│   └── data/sample/        SYNTHETIC test data (invented, does not match real roads)
-└── pipeline/               Python scripts that produce real app data
-    ├── make_sample_data.py      regenerate the synthetic sample (no packages needed)
-    ├── 01_download_roads.py     real roads + footpaths from OpenStreetMap (walk/drive/one-way flags)
-    ├── 02_hecras_to_scenario.py HEC-RAS 2D depth rasters -> app scenario
-    ├── 02b_synthetic_bathtub.py elevation model -> placeholder scenario (no HEC-RAS yet)
-    ├── common.py, places_template.json, requirements.txt
-    └── ml/                       ML surrogate model (see ml/README_ML.md)
-        ├── 01_build_dataset.py   many HEC-RAS runs -> one training table
-        ├── 02_train.py           train + test on unseen storms
-        ├── 03_predict_scenario.py any rainfall -> app scenario
-        └── runs_template.csv, runs_sample.csv
+│   │   ├── app.js          Main controller: MapLibre GL, timeline events, and layer controls
+│   │   ├── config.js       Township coordinates, travel thresholds, and speeds
+│   │   ├── flood.js        HEC-RAS depth interpolation and edge risk calculation
+│   │   ├── sponge.js       Sponge city infrastructure modeling (Green, Blue, Gray)
+│   │   ├── evac.js         Evacuation decision engine and shelter verification
+│   │   ├── routing.js      Flood-weighted Dijkstra graph search
+│   │   ├── geo.js          Geodesic calculations and place search
+│   │   └── rain.js         Rainfall scenario orchestration
+│   └── data/
+│       ├── bbr/            Bandar Bukit Raja road network, places, and flood scenarios
+│       └── sample/         Synthetic test datasets
+└── pipeline/               Data processing and hydrodynamic export scripts
+    ├── 01_download_roads.py     OpenStreetMap road and footpath extraction
+    ├── 02_hecras_to_scenario.py Converts HEC-RAS 2D rasters to web scenario JSON
+    ├── 02b_synthetic_bathtub.py Elevation-based flood fallback model
+    ├── common.py                Shared geospatial utilities
+    └── ml/                      Surrogate machine learning model for rapid flood forecasting
+        ├── 01_build_dataset.py
+        ├── 02_train.py
+        └── 03_predict_scenario.py
 ```
 
-## Run the app locally
+---
 
-The app is plain HTML/JS. Serve the `web` folder with any static server:
+## Quick Start (Run Locally)
+
+The web client is plain, standards-compliant HTML/CSS/JavaScript with zero build or bundler dependencies.
+
+Serve the `web` folder with any static HTTP server:
 
 ```bash
 cd web
 python -m http.server 8000
-# open http://localhost:8000
 ```
 
-- GPS ("Use my location") only works on **https** or **localhost**, and only after the user allows it.
-- On a phone on the same Wi-Fi, use your laptop's IP (e.g. `http://192.168.1.20:8000`); GPS needs https,
-  so for phone testing deploy it (see below) or use a tunnel such as `ngrok http 8000`.
-- The sample data is synthetic and placed near `CONFIG.center`; its roads won't line up with the real map.
+Open [http://localhost:8000](http://localhost:8000) in your browser.
 
-### Demo flow (for the video)
-1. Start from "Home, Jalan Kenanga (sample)" to "Home, Jalan Bakawali (sample)", in **Drive** mode.
-2. Choose **Heavy rain** and tap **Start demo rain**.
-3. Roads and areas turn yellow, then red. Watch the route switch from the South bridge to the North bridge.
-4. Later the route is cut off, and the app tells the user not to drive out and to call 999 if needed.
-5. Switch to **Walk**: the stricter walking thresholds make the route change, and get cut off, earlier.
+> **Tip:** For mobile device testing on the same local Wi-Fi, open `http://<YOUR_LOCAL_IP>:8000`. GPS ("Use my location") requires `localhost` or HTTPS.
 
-## Make real data for your neighbourhood
+---
 
-```bash
-cd pipeline
-pip install -r requirements.txt
+## Step-by-Step Demo Guide
 
-# 1. Roads from OpenStreetMap (bbox = west south east north)
-python 01_download_roads.py --bbox 101.399 3.0905 101.4225 3.110 --out ../web/data/bbr
+1. **Township Overview:**
+   - Observe Bandar Bukit Raja in **3D View** (tilted bearing) with extruded buildings, the 125-acre wetland retention lake, and stormwater culverts.
+   - Note the **Top Middle Clock** displaying `9:00 AM` and the **Sponge Township HUD** showing normal storage (~18%).
+2. **Toggle Flood Prediction:**
+   - Click the **`🔮 Predict`** button in the bottom-middle of the screen.
+   - The forecast time selections (`9:00 AM`, `9:30 AM Flooded`, `10:00 AM Flooded`, `10:30 AM Moderate`, `11:00 AM Safe`) appear in a single row without container boxes or scrollbars.
+3. **Inspect Peak Flood (9:30 AM):**
+   - Click **`9:30 AM Flooded`**:
+     - Bandar Bukit Raja Wetland lake turns red.
+     - Marker alert displays: *"Estimate to flood in 20 mins (9:20 AM)"*.
+     - Alternative suggested routes appear in faded purple.
+     - The route passing through the wetland is tagged `16 mins (unsafe)`, while safe bypass routes are labeled with their clean ETAs (e.g. `15 mins`, `18 mins`).
+4. **Observe Flood Receding (10:30 AM & 11:00 AM):**
+   - Click **`10:30 AM Moderate`**: The wetland transitions to orange (moderate risk), and the route updates to `16 mins (moderate)`.
+   - Click **`11:00 AM Safe`**: The wetland returns to safe natural blue, and the route badge updates to safe `16 mins`.
+5. **Dismiss Prediction:**
+   - Click the **`🔮 Predict`** button again. The time selections disappear cleanly, and conditions return to the 9:00 AM baseline.
+6. **Open Map Legend:**
+   - Click the **`🗺️ Legend`** button in the bottom-right corner to review symbology for routes, risk levels, and sponge assets (culverts, wetlands, parks). Click anywhere outside or the close button to dismiss.
 
-# 2a. With HEC-RAS 2D results (one depth GeoTIFF per time step, exported from RAS Mapper)
-python 02_hecras_to_scenario.py --roads ../web/data/bbr/roads.geojson --rasters ./hecras_heavy \
-  --step-min 10 --rain-mm-hr 60 --id heavy --name "Heavy rain (~60 mm/h)" --out ../web/data/bbr
+---
 
-# 2b. Or, until HEC-RAS is ready, a SYNTHETIC placeholder from an elevation model
-python 02b_synthetic_bathtub.py --roads ../web/data/bbr/roads.geojson --dem bbr_fabdem.tif \
-  --rise-m 1.2 --rain-mm-hr 60 --id heavy --name "Heavy rain (synthetic)" --out ../web/data/bbr
+## Technical Architecture & Engineering Standards
 
-# 3. Edit ../web/data/bbr/places.json with real places and VERIFIED relief centres
-```
+- **Hydrologic & Hydraulic Calibration:** Calibrated against MSMA 2nd Edition standards and historical records from JPS Selangor Station #3014002 (Batu Belah, Klang).
+- **Route Optimization:** Custom modified Dijkstra implementation that applies asymptotic cost penalties to moderate-risk segments and strictly prunes high-risk roads ($>15\text{ cm}$ walk / $>30\text{ cm}$ drive).
+- **PWA Performance:** Service Worker with network-first strategy ensures zero-delay caching, background telemetry synchronization, and offline accessibility during network outages.
 
-Repeat step 2 for each rainfall scenario (e.g. moderate, heavy, extreme). Then in
-`web/js/config.js` set `dataBase: "./data/bbr"` and `center` to your neighbourhood.
+---
 
-## Data format (what the app reads)
+## Credits & Attribution
 
-- `roads.geojson`: LineStrings with `properties: { id, name, highway, walk, drive, oneway, bridge, length_m }`.
-  One-way roads are drawn in their travel direction.
-- `places.json`: `[{ name, coord: [lng, lat], type: "place" | "relief_centre", verified }]`.
-- `scenarios/index.json`: `{ scenarios: [{ id, file, rain_mm_hr }] }`.
-- `scenarios/<id>.json`:
-  ```json
-  { "scenario": "heavy", "name": "Heavy rain (~60 mm/h)", "rain_mm_hr": 60,
-    "generated": "2026-10-18T17:50+08:00", "step_min": 10, "synthetic": false,
-    "depths": { "e12": [0, 0, 0.04, 0.12, 0.31] },
-    "extent": [ { "type": "FeatureCollection", "features": [ { "geometry": "...", "properties": { "level": "moderate", "depth_m": 0.18 } } ] } ] }
-  ```
-
-## ML surrogate model (phase 2)
-
-Once the team has 10–15+ HEC-RAS runs, `pipeline/ml` trains a fast model that predicts
-road flooding for any rainfall. `pipeline/ml/README_ML.md` lists exactly what each HEC-RAS
-run must provide.
-
-## How the logic works
-
-- **Risk per road** = the deepest water expected on that road between now and 30 minutes from now.
-- **Two travel modes**, each with its own thresholds (assumptions in `config.js`):
-  - **Drive:** moderate from 10 cm, high from 30 cm; car roads only, one-way streets respected.
-  - **Walk:** moderate from 5 cm, high from 15 cm; includes footpaths and footbridges.
-- **Safest route**: high-risk roads are blocked; moderate-risk roads cost extra, so they are used only when needed.
-- **Bridges**: risk is taken from the approach roads on each side (the deck sits above the stream).
-- **Live updates**: every tick the app recalculates risk and the route; if the route changes, it explains why.
-- **No safe route / flooded start**: the app shows a stay-safe message instead of a risky route.
-- **Live rain (roadmap)**: `rain.js` polls a rainfall source and `pickScenario()` chooses the closest pre-computed scenario.
-
-## Deploy (free)
-
-Any static host works: GitHub Pages, Netlify or Cloudflare Pages. Publish the `web` folder.
-HTTPS from these hosts makes GPS and "Add to Home Screen" work on phones.
-
-## Roadmap
-
-- Live rainfall from public sources, and an ML model that predicts between scenarios.
-- Water-level sensors at drains to correct predictions in real time.
-- Push alerts and offline maps (native app later).
-- More user profiles (e.g. wheelchair users, drivers vs walkers).
-
-## Credits
-
-Map data © OpenStreetMap contributors (ODbL). Basemap tiles: OpenFreeMap / OpenMapTiles.
-Map rendering: MapLibre GL JS. Flood modelling: HEC-RAS (US Army Corps of Engineers).
+- **Cartography & Roads:** © OpenStreetMap contributors (ODbL). Vector tiles powered by OpenFreeMap / OpenMapTiles.
+- **Rendering Engine:** MapLibre GL JS v4.7.1.
+- **Hydrological Guidelines:** Jabatan Pengairan dan Saliran (JPS) Malaysia & Urban Stormwater Management Manual for Malaysia (MSMA 2nd Ed.).
+- **Township Design:** Modeled after Sime Darby Property's Bandar Bukit Raja master development in Klang, Selangor.

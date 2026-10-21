@@ -1,6 +1,6 @@
 // Service worker: caches the app shell so the app opens quickly and installs as a PWA.
 // Uses network-first so changes and telemetry always stay in sync when connected, with offline cache fallback.
-const CACHE = "floodsafe-v11";
+const CACHE = "floodsafe-v21";
 const SHELL = [
   "./", "./index.html", "./css/styles.css", "./manifest.webmanifest", "./icons/icon.svg",
   "./js/app.js", "./js/config.js", "./js/flood.js", "./js/routing.js", "./js/geo.js", "./js/rain.js", "./js/sponge.js", "./js/evac.js"
