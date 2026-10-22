@@ -1,186 +1,204 @@
 # FloodSafe Route — Bandar Bukit Raja Sponge Township
-
-A real-time flood intelligence, sponge infrastructure visualization, and residential evacuation routing progressive web app (PWA) designed for **Bandar Bukit Raja (BBR), Klang, Selangor**.
-
-Built for the **Sime Darby Property University Hackathon 2026** ("Township of Tomorrow" — People & Sustainability themes).
-
-> **Safety Disclaimer:** This application is a prototype demonstrating hydrodynamic flood simulation and sponge township integration. It supports official emergency notices and never replaces them. Always follow PDRM, Bomba, APM, and NADMA directives, and dial 999 in an emergency.
-
+ 
+A flood-aware map and evacuation routing web app (PWA) for **Bandar Bukit Raja (BBR), Klang, Selangor**, piloted around **Taman Kyra, Taman Casira and Jalan Makyong**, areas with reported floods in 2023 and 2024.
+ 
+Built for the **Sime Darby Property University Hackathon 2026** ("Township of Tomorrow", People theme). Designed to work for flood-prone townships across Malaysia.
+ 
+> **Safety:** this is a prototype. It supports official warnings and never replaces them. Always follow PDRM, Bomba, APM and NADMA, and call 999 in an emergency.
+ 
+> **Data status (prototype):** roads, buildings, water bodies and drains are real OpenStreetMap data. The river-level model is trained on **real JPS Public Infobanjir records** (three stations, Oct–Dec 2024, a short sample). **Road flood depths and the station readings used in the Predict timeline are simulated**, based on reported floods in the area. Nothing here is a live or official forecast. See [`DATA_SOURCES.md`](DATA_SOURCES.md).
+ 
 ---
-
-## Key Capabilities
-
-### 1. 🌿💧⚙️ Sponge City Framework (MSMA / JPS Guidelines)
-Models and monitors multi-tier stormwater retention infrastructure across Bandar Bukit Raja:
-- **🌿 Green Infrastructure:** Urban parks, community rain gardens, bioswales, and porous ground covers.
-- **💧 Blue Infrastructure:** 125-acre Bandar Bukit Raja Wetland system, retention lakes, detention ponds, and widened stream corridors.
-- **🚰 Gray Infrastructure:** Reinforced Concrete Box Culverts (RCBC), monsoon U-drains, and roadside intake sumps.
-- **Township HUD:** Live retention meter tracking total stored stormwater volume ($m^3$) and capacity percentage.
-
-### 2. 🔮 Interactive Flood Prediction & Timeline Navigation
-Located in the bottom-middle of the screen, the **`🔮 Predict`** button toggles a multi-hour flood progression forecast:
-- **9:00 AM (Baseline / Current):** Clear access, road depths at 0 cm, normal retention.
-- **9:30 AM (+30 min — Flood Onset):** Bandar Bukit Raja Wetland inundates (highlighted in red). Alert marker: *"Estimate to flood in 20 mins (9:20 AM)"*. Primary route avoids high risk, and suggested alternative routes appear in faded purple (`15 mins`, `16 mins (unsafe)`, `18 mins`).
-- **10:00 AM (+60 min — Peak Flood):** Peak inundation across wetland corridor; high-risk bypasses remain active.
-- **10:30 AM (+90 min — Receding):** Wetland transitions to moderate risk (highlighted in orange); route badge updates to `16 mins (moderate)`.
-- **11:00 AM (+120 min — Safe):** Runoff clears; wetland returns to safe natural blue, and the 16-minute route returns to safe `16 mins`.
-- **Dismiss on demand:** Clicking `🔮 Predict` again dismisses the time selections and returns to 9:00 AM baseline.
-
-### 3. 🚨 Critical Emergency Facilities Directory & Map Pinpoints
-Pinpoints verified, real-world emergency infrastructure across Bandar Bukit Raja and Klang district with interactive custom MapLibre markers, category color coding, and one-click evacuation routing:
-- **🏢 Emergency Shelters (Purple):**
-  - **Dewan Majlis Bandaraya Diraja Klang (MBDK)** *(Dewan Hamzah)* — Capacity ~1,500 evacuees.
-  - **Grace Community Services** — Food bank & community emergency relief center.
-  - **Masjid Bandar Bukit Raja** — Verified official PPS shelter with APM / NADMA.
-- **🏥 Hospitals & Clinics (Crimson Red):**
-  - **Columbia Asia Hospital Klang** — 24/7 Emergency Department & multi-specialty care.
-  - **Hospital Tengku Ampuan Rahimah (HTAR)** — Lead public general hospital and Level 1 trauma centre for Klang district.
-  - **Klinik Dr Rosli Bukit Raja** — 24-hour local community triage clinic on Jalan Makyong 5A.
-- **🚒 Search & Rescue Operations (Safety Orange):**
-  - **Klang Utara Fire and Rescue Station (BBP Sungai Pinang)** — Water Rescue Unit (PPDA), Hotline: `+603-3342 4444`.
-  - **Klang Selatan Fire and Rescue Station (BBP Kota Raja)** — Search and Rescue Command, Hotline: `+603-3371 4444`.
-- **Interactive Quick Filter Bar:** Located directly under the trip planner, users can filter by category (`All`, `🏢 Shelters`, `🏥 Hospitals`, `🚒 Rescue`) to instantly fit map bounds and highlight matching facilities.
-- **Direct Regional Evacuation Routing:** Clicking `📍 Route Here` or `🚩 Start Here` on any facility card generates seamless, turn-by-turn routing through safe neighborhood roads and connects via arterial corridors without network blocking.
-
-### 4. 🏛️ Residential Evacuation Decision System
-- **Verified Relief Centres:** Direct, safe routing to designated Pusat Pemindahan Sementara (PPS) shelters, such as **Masjid Bandar Bukit Raja** (verified with APM / NADMA criteria).
-- **Zero High-Risk Routing:** Flood-aware Dijkstra routing actively bypasses inundated road segments, recalculating safe alternative corridors.
-- **Dual Travel Modes:** Separate safety depth thresholds for **Walk** (moderate: 5 cm, high: 15 cm) and **Drive** (moderate: 10 cm, high: 30 cm).
-
-### 5. 🏙️ 3D & Top View Perspective
-- Extruded 3D OpenStreetMap buildings with realistic structural heights.
-- Seamless synchronization between tilted 3D perspective and Top-down orthographic camera views.
-- Fully visible culverts, sumps, lakes, and route markers in both modes.
-
-### 6. 🗺️ Bottom-Right Floating Legend
-- Dedicated floating button anchored at the bottom-right corner.
-- Toggles a clean popup explaining routes (purple primary vs. faded suggested), risk tiers (moderate, high, floodwater), sponge infrastructure assets, and emergency facility pins (Shelters, Hospitals, Rescue).
-
+ 
+## What it does
+ 
+1. **Shows a 3D map** of real streets, buildings, water bodies and sponge infrastructure in Bandar Bukit Raja.
+2. **Predicts flooding** in two ways:
+   - **Road flood scenarios:** water depth on every road segment, every 10 minutes, for moderate, heavy and extreme rain.
+   - **River level forecast:** an XGBoost model predicts the water level at Sg. Binjai 3 hours ahead from three JPS stations.
+3. **Marks risk** on roads and areas: **yellow (moderate)** and **red (high)**, with separate limits for walking and driving.
+4. **Recommends the safest route** from the user's location to a destination, avoiding roads that are flooded or will flood within 30 minutes, and **reroutes live** as water rises.
+5. **Supports evacuation decisions:** time until roads flood, nearby relief centres, hospitals and rescue stations, and clear "stay where you are" advice when no safe route exists.
+6. **Shows township resilience:** an estimate of how full the sponge infrastructure (wetlands, ponds, drains) is.
 ---
-
-## Project Structure
-
+ 
+## Key features
+ 
+### 1. 🗺️ 3D flood map and safe routing
+- Real OpenStreetMap roads (1,704 segments) with walk, drive, one-way and bridge information.
+- **Walk / Drive modes** with separate risk limits:
+  - **Walk:** moderate from 5 cm, high from 15 cm.
+  - **Drive:** moderate from 10 cm, high from 30 cm.
+- Flood-aware routing (Dijkstra) blocks high-risk roads and avoids moderate-risk roads where possible.
+- Set start and destination by GPS, by typing a place, by tapping the map ("Start here" / "Go here"), or by dragging the pins.
+- Turn-by-turn directions, travel time, and a message explaining why the route changed.
+- Gated-community roads are treated as drivable (406 roads fixed; see `road_fixes.txt`).
+### 2. 🔮 Predict timeline (demo scenario)
+- The **Predict** button shows forecast times (9:00, 9:30, 10:00, 10:30, 11:00 AM).
+- Shows the wetland and roads changing risk over time, alerts such as "estimated to flood in 20 minutes", and faded alternative routes with their travel times.
+- **Note:** the times, alerts and station readings in this timeline are a **scripted demo scenario**, not live data.
+### 3. 🏛️ Evacuation decision support
+- Scans each road on the route for current depth, peak depth and **time until it floods**.
+- Recommends whether to go now or switch to a relief centre.
+### 4. 🚨 Emergency facilities
+- Relief centres, hospitals and fire and rescue stations in and around Klang, with colour-coded pins, a filter bar, and **Route Here / Start Here** buttons.
+- **Masjid Bandar Bukit Raja** was used as a temporary relief centre (PPS) in the June 2023 flash flood (APM Selangor, via Buletin TV3). Relief centres are opened by the authorities for each event, so users should check official announcements.
+- Facility details and contact numbers are listed in `web/data/bbr/places.json` with their sources. **Verify contact numbers before any public release.**
+### 5. 🌿💧⚙️ Sponge township layer
+- **Green:** parks and green areas. **Blue:** wetlands, ponds and lakes. **Grey:** drains and culverts. All from OpenStreetMap.
+- A storage meter estimates how full the system is. The Warning (75%) and Danger (85%) levels are **our own assumptions**, not MSMA values.
+### 6. Interface
+- 3D and top views, a floating legend, dark mode, and installable as a phone app (PWA).
+---
+ 
+## How it works
+ 
+```
+1. Collect        JPS river level and rainfall (3 stations) · OpenStreetMap roads, buildings, water, drains · relief centres
+      ↓
+2. Predict        XGBoost: river level 3 hours ahead · flood scenarios: depth on every road every 10 min
+      ↓
+3. Assess risk    each road: safe / moderate / high, for walking and driving · time until it floods
+      ↓
+4. Route          flood-aware routing avoids roads flooding within 30 min · reroutes as water rises
+      ↓
+5. Guide          map, safe route, warnings, nearest relief centre or "stay where you are"
+```
+ 
+---
+ 
+## Project structure
+ 
 ```
 SimeDarby/
-├── README.md               Project overview, architecture, and demo guide
-├── DATA_SOURCES.md         Data sources, engineering assumptions, and validation
-├── run_all.bat             1-Click launcher (starts AI Backend + Web Frontend + opens browser)
-├── run_backend.bat         1-Click launcher for Flask AI backend (port 5000)
-├── run_frontend.bat        1-Click launcher for Web Frontend (port 8000)
-├── backend/                Python AI Prediction REST API
-│   ├── app.py              Flask REST API exposing /predict with JPS Selangor thresholds
-│   └── models/             Directory for trained XGBoost .joblib files
-│       └── README.md       Instructions for dropping Colab models
-├── web/                    App shell and client logic (static, no build step required)
-│   ├── index.html          Semantic HTML5 layout and control anchors
-│   ├── manifest.webmanifest PWA manifest (installable on mobile and desktop)
-│   ├── sw.js               Service Worker with network-first caching and offline fallback
-│   ├── icons/              Vector application icons
-│   ├── css/
-│   │   └── styles.css      Clean responsive styling, dark mode support, and animations
+├── README.md               This file
+├── DATA_SOURCES.md         Every data source, assumption and simulated dataset
+├── run_all.bat             Starts backend + frontend and opens the browser (Windows)
+├── run_backend.bat         Starts the Flask backend (port 5000)
+├── run_frontend.bat        Starts the web app (port 8000)
+├── colab.ipynb             Data preparation and XGBoost model training (Google Colab)
+├── road_fixes.txt          Roads changed from walk-only to drivable (gated communities)
+├── backend/
+│   ├── app.py              Flask API: /predict (3-hour river level forecast + JPS alert level)
+│   └── models/             Put the trained .joblib model files here
+├── web/                    The app (static files, no build step)
+│   ├── index.html, css/styles.css, manifest.webmanifest, sw.js, icons/
 │   ├── js/
-│   │   ├── app.js          Main controller: MapLibre GL, timeline events, and layer controls
-│   │   ├── config.js       Township coordinates, travel thresholds, and API URLs
-│   │   ├── flood.js        HEC-RAS depth interpolation, risk calculation, & AI backend client
-│   │   ├── sponge.js       Sponge city infrastructure modeling (Green, Blue, Gray)
-│   │   ├── evac.js         Evacuation decision engine and shelter verification
-│   │   ├── routing.js      Flood-weighted Dijkstra graph search
-│   │   ├── geo.js          Geodesic calculations and place search
-│   │   └── rain.js         Rainfall scenario orchestration
+│   │   ├── app.js          Map, UI, Predict timeline, live updates
+│   │   ├── config.js       Map centre, Walk/Drive limits, data folder, backend URL
+│   │   ├── flood.js        Flood scenarios, risk per road, backend client
+│   │   ├── routing.js      Road graph, snapping, flood-aware routing
+│   │   ├── evac.js         Evacuation decision support
+│   │   ├── sponge.js       Sponge township layer and storage meter
+│   │   ├── geo.js          GPS, distance, place search
+│   │   └── rain.js         Demo storm player, live rain hook (roadmap)
 │   └── data/
-│       ├── bbr/            Bandar Bukit Raja road network, places, and flood scenarios
-│       └── sample/         Synthetic test datasets
-└── pipeline/               Data processing and hydrodynamic export scripts
-    ├── 01_download_roads.py     OpenStreetMap road and footpath extraction
-    ├── 02_hecras_to_scenario.py Converts HEC-RAS 2D rasters to web scenario JSON
-    ├── 02b_synthetic_bathtub.py Elevation-based flood fallback model
-    ├── common.py                Shared geospatial utilities
-    └── ml/                      Surrogate machine learning model for rapid flood forecasting
-        ├── 01_build_dataset.py
-        ├── 02_train.py
-        └── 03_predict_scenario.py
+│       ├── bbr/            Bandar Bukit Raja roads, places and flood scenarios
+│       └── sample/         Small synthetic test dataset
+└── pipeline/               Data scripts (roads, scenarios, HEC-RAS conversion, ML)
+    ├── 01_download_roads.py       Real roads and footpaths from OpenStreetMap
+    ├── 02_hecras_to_scenario.py   HEC-RAS 2D depth maps → app scenario
+    ├── 02b_synthetic_bathtub.py   Elevation-based placeholder scenario
+    ├── make_bbr_scenarios.py      Current simulated BBR scenarios
+    └── ml/                        Optional surrogate model trained on HEC-RAS runs
 ```
-
+ 
 ---
-
-## Quick Start (Run Locally)
-
-### Option 1: 1-Click Launch (Recommended)
-Double-click `run_all.bat` in the root folder. It will:
-1. Start the **Flask AI Backend Server** on `http://localhost:5000`.
-2. Start the **Web Frontend Server** on `http://localhost:8000`.
-3. Automatically open your default browser to `http://localhost:8000`.
-
-### Option 2: Manual Terminal Launch
-1. **Start AI Backend:**
-   ```bash
-   python backend/app.py
-   ```
-2. **Start Web Frontend:**
-   ```bash
-   cd web
-   python -m http.server 8000
-   ```
-3. Open [http://localhost:8000](http://localhost:8000) in your browser.
-
-> **Tip:** For mobile device testing on the same local Wi-Fi, open `http://<YOUR_LOCAL_IP>:8000`. GPS ("Use my location") requires `localhost` or HTTPS.
-
+ 
+## Run locally
+ 
+**One click (Windows):** double-click `run_all.bat`. It starts the backend on http://localhost:5000, the app on http://localhost:8000, and opens your browser.
+ 
+**Manually:**
+```bash
+pip install flask flask-cors joblib pandas xgboost
+python backend/app.py
+ 
+cd web
+python -m http.server 8000
+```
+Then open http://localhost:8000.
+ 
+- GPS ("Use my location") needs `localhost` or HTTPS, and the user's permission.
+- If changes don't appear: F12 → Application → Service Workers → **Unregister**, then **Ctrl + Shift + R**.
 ---
-
-## 🤖 AI & JPS Multi-Station Hydrologic Backend (`backend/app.py`)
-
-The application integrates real-time machine learning predictions derived from three key JPS Selangor telemetry stations along the Klang River basin:
-- **Station 3112401 — Sg. Binjai di Pekan Meru** (Target Station: Stage + Rainfall)
-- **Station 3014001 — Sg. Rasau di Tugu Keris** (Downstream backwater telemetry)
-- **Station 3014004 — Sg. Klang di Bandar Klang** (Tidal & confluence telemetry)
-
-### Dual-Engine Resilience:
-1. **Trained XGBoost Mode:** If `real_xgboost_flood_model.joblib` and `real_feature_columns.joblib` are placed in `backend/models/`, the backend loads the exact model trained in Google Colab (`colab.ipynb`).
-2. **Calibrated Formula Mode (Zero Setup Fallback):** If the `.joblib` files are not yet present, `backend/app.py` runs a calibrated multi-station hydrologic regression directly derived from the notebook parameters. The app runs seamlessly right out of the box with zero configuration!
-
-### Official JPS Selangor River Thresholds:
-- **NORMAL (< 3.50m):** Green indicator, 18% - 65% township sponge retention.
-- **ALERT (3.50m - 4.19m):** Amber indicator, 70% - 79% retention, preparatory notice.
-- **WARNING (4.20m - 4.49m):** Orange indicator, 80% - 89% retention, emergency services on standby.
-- **DANGER (≥ 4.50m):** Red indicator, 90% - 100% retention, evacuation routing active.
-
+ 
+## 🤖 River level prediction backend (`backend/app.py`)
+ 
+The backend predicts the water level at Sg. Binjai **3 hours ahead** from three JPS Selangor stations in the Klang River basin:
+ 
+| Station | ID | Role |
+| --- | --- | --- |
+| Sg. Binjai di Pekan Meru | 3112401 | Target station: water level and rainfall |
+| Sg. Rasau di Tugu Keris | 3014001 | Downstream water level |
+| Sg. Klang di Bandar Klang | 3014004 | Main river and tidal influence |
+ 
+**Model:** XGBoost regressor trained in `colab.ipynb` on **real JPS Public Infobanjir records** downloaded for the three stations (15-minute readings, Oct–Dec 2024; about 1,000 rows after filtering). The notebook also contains a simulated two-year dataset used while building the pipeline.
+ 
+**Results on held-out real data (from `colab.ipynb`):**
+ 
+| Model | MAE | RMSE |
+| --- | --- | --- |
+| Persistence (assume level stays the same) | 0.030 m | 0.159 m |
+| Linear Regression | 0.065 m | 0.158 m |
+| Random Forest | 0.393 m | 0.628 m |
+| XGBoost | 0.410 m | 0.653 m |
+ 
+With this short sample, the simple baselines beat XGBoost. A longer record (several monsoon seasons) is needed before the model can be trusted; this is on the roadmap.
+ 
+**Two modes:**
+1. **Trained model:** if `real_xgboost_flood_model.joblib` and `real_feature_columns.joblib` are in `backend/models/`, the backend uses them.
+2. **Fallback formula:** if they're missing, the backend uses a simple hand-built formula so the app still runs. Its output is illustrative only.
+**Prototype status:** in the Predict timeline, the app sends **fixed demo station readings** for each time step. Live telemetry is on the roadmap.
+ 
+**JPS alert levels used to classify the forecast (Sg. Binjai):**
+| Level | Water level |
+| --- | --- |
+| Normal | below 3.50 m |
+| Alert | 3.50–4.19 m |
+| Warning | 4.20–4.49 m |
+| Danger | 4.50 m and above |
+ 
 ---
-
-## Step-by-Step Demo Guide
-
-1. **Township Overview:**
-   - Observe Bandar Bukit Raja in **3D View** (tilted bearing) with extruded buildings, the 125-acre wetland retention lake, and stormwater culverts.
-   - Note the **Top Middle Clock** displaying `9:00 AM` and the **Sponge Township HUD** showing normal storage (~18%).
-2. **Toggle Flood Prediction:**
-   - Click the **`🔮 Predict`** button in the bottom-middle of the screen.
-   - The forecast time selections (`9:00 AM`, `9:30 AM Flooded`, `10:00 AM Flooded`, `10:30 AM Moderate`, `11:00 AM Safe`) appear in a single row without container boxes or scrollbars.
-3. **Inspect Peak Flood (9:30 AM):**
-   - Click **`9:30 AM Flooded`**:
-     - Bandar Bukit Raja Wetland lake turns red.
-     - Marker alert displays: *"Estimate to flood in 20 mins (9:20 AM)"*.
-     - Alternative suggested routes appear in faded purple.
-     - The route passing through the wetland is tagged `16 mins (unsafe)`, while safe bypass routes are labeled with their clean ETAs (e.g. `15 mins`, `18 mins`).
-4. **Observe Flood Receding (10:30 AM & 11:00 AM):**
-   - Click **`10:30 AM Moderate`**: The wetland transitions to orange (moderate risk), and the route updates to `16 mins (moderate)`.
-   - Click **`11:00 AM Safe`**: The wetland returns to safe natural blue, and the route badge updates to safe `16 mins`.
-5. **Dismiss Prediction:**
-   - Click the **`🔮 Predict`** button again. The time selections disappear cleanly, and conditions return to the 9:00 AM baseline.
-6. **Open Map Legend:**
-   - Click the **`🗺️ Legend`** button in the bottom-right corner to review symbology for routes, risk levels, and sponge assets (culverts, wetlands, parks). Click anywhere outside or the close button to dismiss.
-
+ 
+## Demo guide
+ 
+1. **Overview:** open the app in 3D view over Bandar Bukit Raja. The clock shows 9:00 AM and the sponge meter shows normal storage.
+2. **Plan a trip:** From **Taman Kyra** → To **Masjid Bandar Bukit Raja (relief centre)**, in **Drive** mode.
+3. **Predict:** click **🔮 Predict**, then **9:30 AM Flooded**. The wetland turns red, an alert shows the estimated flood time, and alternative routes appear with their travel times.
+4. **Receding:** click **10:30 AM Moderate** (orange), then **11:00 AM Safe** (blue).
+5. **Walk vs Drive:** switch to **Walk** and see stricter limits change the route.
+6. **Facilities:** use the filter bar (Shelters, Hospitals, Rescue) and **Route Here**.
+7. **Legend:** click **🗺️ Legend** (bottom right) to explain the symbols.
 ---
-
-## Technical Architecture & Engineering Standards
-
-- **Hydrologic & Hydraulic Calibration:** Calibrated against MSMA 2nd Edition standards and historical records from JPS Selangor Station #3014002 (Batu Belah, Klang).
-- **Route Optimization:** Custom modified Dijkstra implementation that applies asymptotic cost penalties to moderate-risk segments and strictly prunes high-risk roads ($>15\text{ cm}$ walk / $>30\text{ cm}$ drive).
-- **PWA Performance:** Service Worker with network-first strategy ensures zero-delay caching, background telemetry synchronization, and offline accessibility during network outages.
-
+ 
+## Technical notes
+ 
+- **Routing:** Dijkstra on the OpenStreetMap road graph. High-risk roads are blocked; moderate-risk roads cost extra. Pins snap to the nearest point on a usable road.
+- **Risk look-ahead:** a road counts as risky now if it will reach the limit within 30 minutes.
+- **PWA:** a service worker caches the app shell; flood data is fetched network-first.
+- **Thresholds:** walking and driving limits follow commonly cited flood-safety guidance and are assumptions to agree with authorities.
+## Limitations
+ 
+- Road flood depths and Predict timeline readings are **simulated**.
+- The river-level model is trained on a short real record and does not yet beat a simple baseline.
+- The fallback formula is used unless the trained model files are added.
+- Some buildings and roads are missing from OpenStreetMap, especially in newer housing phases.
+- Relief centres shown were used in past floods; which centres open is decided by the authorities for each event.
+## Roadmap
+ 
+- HEC-RAS 2D flood modelling for the study area, replacing the simulated road scenarios.
+- Train on several years of JPS records, and connect live rainfall and river levels.
+- Water-level sensors at key drains and ponds.
+- Push alerts and offline maps (native app).
+- More townships across Malaysia.
 ---
-
-## Credits & Attribution
-
-- **Cartography & Roads:** © OpenStreetMap contributors (ODbL). Vector tiles powered by OpenFreeMap / OpenMapTiles.
-- **Rendering Engine:** MapLibre GL JS v4.7.1.
-- **Hydrological Guidelines:** Jabatan Pengairan dan Saliran (JPS) Malaysia & Urban Stormwater Management Manual for Malaysia (MSMA 2nd Ed.).
-- **Township Design:** Modeled after Sime Darby Property's Bandar Bukit Raja master development in Klang, Selangor.
+ 
+## Credits
+ 
+- **Map data:** © OpenStreetMap contributors (ODbL). Vector tiles: OpenFreeMap / OpenMapTiles.
+- **Map rendering:** MapLibre GL JS 4.7.1.
+- **River data:** JPS Public Infobanjir (Jabatan Pengairan dan Saliran Malaysia).
+- **Guidelines:** Urban Stormwater Management Manual for Malaysia (MSMA 2nd Ed.), JPS.
+- **Study area:** Bandar Bukit Raja, Klang, a Sime Darby Property township.
+ 
