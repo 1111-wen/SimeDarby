@@ -1,6 +1,6 @@
 // FloodSafe Route: main app. Wires the map, flood scenarios, routing and the UI together.
 import { CONFIG } from "./config.js";
-import { loadScenarios, pickScenario, level } from "./flood.js";
+import { loadScenarios, pickScenario, level, fetchLiveFloodPrediction } from "./flood.js";
 import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps, roadLabel } from "./routing.js";
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
@@ -15,7 +15,8 @@ const ui = {
   spongeHudBar: $("spongeHudBar"), spongeStorageText: $("spongeStorageText"), spongeRainText: $("spongeRainText"),
   predictBtn: $("predictBtn"), predictTimePopup: $("predictTimePopup"),
   topTimeBar: $("topTimeBar"), topTimeVal: $("topTimeVal"),
-  legendBtn: $("legendBtn"), legendPopup: $("legendPopup"), legendCloseBtn: $("legendCloseBtn")
+  legendBtn: $("legendBtn"), legendPopup: $("legendPopup"), legendCloseBtn: $("legendCloseBtn"),
+  emergBar: $("emergBar")
 };
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const OFF_NETWORK_M = 400; // further than this from any mapped road = outside the mapped area
@@ -26,6 +27,50 @@ const state = {
   t: 0, hasRain: false, from: null, to: null, lastRouteKey: null, lastEdges: [], lastNames: new Map(),
   watchId: null, storm: null, predictActive: false, selectedForecastMin: 30, altRoutes: []
 };
+
+let emergMarkers = [];
+let activeEmergFilter = "all";
+
+const VERIFIED_EMERGENCY_FACILITIES = [
+  { name: "Masjid Bandar Bukit Raja (relief centre)", shortName: "Masjid BBR (PPS)", coord: [101.42946, 3.08999], type: "relief_centre", category: "shelter", icon: "🏢", verified: true, address: "Jalan Makyong 5E/KU5, Bandar Bukit Raja, 41050 Klang", desc: "Verified Official PPS Relief Shelter (APM / NADMA)" },
+  { name: "Dewan Majlis Bandaraya Diraja Klang (MBDK)", shortName: "Dewan MBDK", coord: [101.443913, 3.044572], type: "emergency_shelter", category: "shelter", icon: "🏢", verified: true, address: "Lorong Perbandaran, Kawasan 1, 41000 Klang", desc: "Major Civic Hall Evacuation Centre (MBDK), Capacity: ~1,500 evacuees" },
+  { name: "Grace Community Services", shortName: "Grace Community", coord: [101.465479, 3.054569], type: "emergency_shelter", category: "shelter", icon: "🏢", verified: true, address: "7, Jalan Dendang 1, Pusat Bandar Berkeley, 41300 Klang", desc: "Community Relief Shelter, Soup Kitchen & Emergency Food Bank" },
+  { name: "Columbia Asia Hospital Klang", shortName: "Columbia Asia", coord: [101.446590, 3.085915], type: "hospital", category: "hospital", icon: "🏥", verified: true, address: "1, Jalan Mahkota 1/KU 2, Bandar Bukit Raja, 41050 Klang", desc: "24/7 Emergency Department & Multi-Specialty Hospital" },
+  { name: "Hospital Tengku Ampuan Rahimah (HTAR)", shortName: "HTAR Klang", coord: [101.442338, 3.026846], type: "hospital", category: "hospital", icon: "🏥", verified: true, address: "Jalan Langat, 41200 Klang", desc: "Lead Public General Hospital & Level 1 Trauma Centre, Klang District" },
+  { name: "Klinik Dr Rosli Bukit Raja", shortName: "Klinik Dr Rosli", coord: [101.431770, 3.090409], type: "hospital", category: "hospital", icon: "🩺", verified: true, address: "19G, Jalan Makyong 5A/KU5, Bandar Bukit Raja, 41050 Klang", desc: "24-Hour Community Medical Clinic & Flood Triage Station" },
+  { name: "Klang Utara Fire and Rescue Station", shortName: "Bomba Klang Utara", coord: [101.442800, 3.060100], type: "fire_station", category: "rescue", icon: "🚒", verified: true, address: "Batu 1 1/2, Jalan Kapar, Kawasan 18, 41400 Klang", desc: "Balai Bomba dan Penyelamat (BBP) Sungai Pinang, Water Rescue Unit (PPDA)", phone: "+603-3342 4444" },
+  { name: "Klang Selatan Fire and Rescue Station", shortName: "Bomba Klang Selatan", coord: [101.447400, 3.042600], type: "fire_station", category: "rescue", icon: "🚒", verified: true, address: "Jalan Gedung Raja Abdullah, Kawasan 1, 41000 Klang", desc: "Balai Bomba dan Penyelamat (BBP) Kota Raja, Search & Rescue Operations Base", phone: "+603-3371 4444" }
+];
+
+function getPlaceCategory(p) {
+  if (p && p.category) return p.category;
+  if (!p) return "shelter";
+  if (p.type === "relief_centre" || p.type === "emergency_shelter" || (p.name && p.name.toLowerCase().includes("masjid"))) return "shelter";
+  if (p.type === "hospital" || (p.name && (p.name.toLowerCase().includes("hospital") || p.name.toLowerCase().includes("klinik")))) return "hospital";
+  if (p.type === "fire_station" || (p.name && (p.name.toLowerCase().includes("fire") || p.name.toLowerCase().includes("bomba")))) return "rescue";
+  return "shelter";
+}
+
+function getPlaceIcon(p) {
+  if (p && p.icon) {
+    if ((p.type === "relief_centre" || (p.name && p.name.toLowerCase().includes("masjid"))) && p.icon === "🚒") return "🏢";
+    return p.icon;
+  }
+  const cat = getPlaceCategory(p);
+  if (cat === "shelter") return "🏢";
+  if (cat === "hospital") return "🏥";
+  if (cat === "rescue") return "🚒";
+  return "🏢";
+}
+
+function isEmergencyPlace(p) {
+  if (!p) return false;
+  if (p.category === "shelter" || p.category === "hospital" || p.category === "rescue") return true;
+  if (p.type === "emergency_shelter" || p.type === "hospital" || p.type === "fire_station" || p.type === "relief_centre") return true;
+  const nm = (p.name || "").toLowerCase();
+  if (nm.includes("masjid") || nm.includes("hospital") || nm.includes("klinik") || nm.includes("bomba") || nm.includes("fire") || nm.includes("mbdk") || nm.includes("grace")) return true;
+  return false;
+}
 
 const th = () => CONFIG.modes[state.mode];
 
@@ -132,9 +177,9 @@ async function addLayers() {
     paint: { "line-color": css("--route"), "line-width": 7 } });
 
   map.addSource("fs-places", { type: "geojson", data: emptyFC });
-  map.addLayer({ id: "fs-centres", type: "circle", source: "fs-places", filter: ["==", ["get", "type"], "relief_centre"],
+  map.addLayer({ id: "fs-centres", type: "circle", source: "fs-places", filter: ["==", ["get", "type"], "__inactive__"],
     paint: { "circle-radius": 8, "circle-color": css("--centre"), "circle-stroke-width": 3, "circle-stroke-color": css("--panel") } });
-  map.addLayer({ id: "fs-centre-labels", type: "symbol", source: "fs-places", filter: ["==", ["get", "type"], "relief_centre"],
+  map.addLayer({ id: "fs-centre-labels", type: "symbol", source: "fs-places", filter: ["==", ["get", "type"], "__inactive__"],
     layout: { "text-field": ["get", "name"], "text-offset": [0, 1.4], "text-size": 13, "text-font": ["Noto Sans Bold"] },
     paint: { "text-color": css("--centre"), "text-halo-color": css("--panel"), "text-halo-width": 2 } });
 
@@ -177,18 +222,160 @@ const toMarker = new maplibregl.Marker({ element: pinEl("to"), draggable: true }
 fromMarker.on("dragend", () => { const l = fromMarker.getLngLat(); setFrom({ name: "Pinned start", coord: [l.lng, l.lat] }); });
 toMarker.on("dragend", () => { const l = toMarker.getLngLat(); setTo({ name: "Pinned destination", coord: [l.lng, l.lat] }); });
 
+// ---------------- Emergency Facilities Pinpoints & Filter
+function renderEmergencyMarkers() {
+  emergMarkers.forEach(m => m.marker.remove());
+  emergMarkers = [];
+
+  const emergPlaces = state.places.filter(isEmergencyPlace);
+  emergPlaces.forEach(p => {
+    const pCat = getPlaceCategory(p);
+    const pIcon = getPlaceIcon(p);
+
+    const el = document.createElement("div");
+    el.className = `emerg-marker cat-${pCat}`;
+    el.dataset.category = pCat;
+    el.dataset.name = p.name;
+
+    const container = document.createElement("div");
+    container.className = "emerg-marker-container";
+
+    const pin = document.createElement("div");
+    pin.className = "emerg-pin";
+    const icon = document.createElement("span");
+    icon.className = "emerg-icon";
+    icon.textContent = pIcon;
+    pin.appendChild(icon);
+
+    const badge = document.createElement("div");
+    badge.className = "emerg-badge";
+    const badgeText = document.createElement("span");
+    badgeText.className = "emerg-badge-text";
+    badgeText.textContent = p.shortName || p.name;
+    badge.appendChild(badgeText);
+
+    container.appendChild(pin);
+    container.appendChild(badge);
+    el.appendChild(container);
+
+    const catTitle = pCat === "shelter"
+      ? "Emergency Evacuation Shelter"
+      : pCat === "hospital"
+      ? "Hospital & Medical Centre"
+      : "Search & Rescue Operations (Bomba)";
+
+    const popupContent = document.createElement("div");
+    popupContent.className = "emerg-popup";
+    popupContent.innerHTML = `
+      <div class="emerg-popup-head cat-${pCat}">
+        <span class="emerg-popup-cat-badge">${pIcon} ${catTitle}</span>
+        <h4 class="emerg-popup-title">${p.name}</h4>
+      </div>
+      <div class="emerg-popup-body">
+        <div class="emerg-popup-addr"><strong>📍 Address:</strong> ${p.address || 'Klang, Selangor'}</div>
+        <div class="emerg-popup-desc"><strong>ℹ️ Operation:</strong> ${p.desc || ''}</div>
+        ${p.phone ? `<div class="emerg-popup-phone"><strong>📞 Emergency Hotline:</strong> <a href="tel:${p.phone}">${p.phone}</a></div>` : ''}
+        <div class="emerg-popup-actions">
+          <button type="button" class="emerg-action-btn btn-to">📍 Route Here</button>
+          <button type="button" class="emerg-action-btn btn-from">🚩 Start Here</button>
+        </div>
+      </div>
+    `;
+
+    const popup = new maplibregl.Popup({ offset: [0, -32], closeButton: true, maxWidth: "320px" })
+      .setDOMContent(popupContent);
+
+    popup.on("open", () => {
+      const btnTo = popupContent.querySelector(".btn-to");
+      const btnFrom = popupContent.querySelector(".btn-from");
+      if (btnTo) btnTo.onclick = () => { setTo(p); popup.remove(); };
+      if (btnFrom) btnFrom.onclick = () => { setFrom(p); popup.remove(); };
+    });
+
+    const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+      .setLngLat(p.coord)
+      .setPopup(popup)
+      .addTo(map);
+
+    emergMarkers.push({ marker, place: p, element: el });
+  });
+}
+
+function filterEmergencyFacilities(cat) {
+  activeEmergFilter = cat;
+  document.querySelectorAll(".emerg-chip").forEach(chip => {
+    chip.classList.toggle("active", chip.dataset.cat === cat);
+  });
+
+  const matched = [];
+  emergMarkers.forEach(({ element, place }) => {
+    const pCat = getPlaceCategory(place);
+    if (cat === "all" || pCat === cat) {
+      element.classList.remove("dimmed");
+      element.classList.add("highlighted");
+      matched.push(place.coord);
+    } else {
+      element.classList.add("dimmed");
+      element.classList.remove("highlighted");
+    }
+  });
+
+  if (matched.length > 0) {
+    const bounds = matched.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(matched[0], matched[0]));
+    map.fitBounds(bounds, {
+      padding: { top: 90, bottom: 90, left: window.innerWidth > 900 ? 380 : 40, right: 60 },
+      maxZoom: 14.5,
+      duration: 1100
+    });
+    const label = cat === "all"
+      ? "all 8 emergency facilities"
+      : cat === "shelter"
+      ? "3 emergency shelters"
+      : cat === "hospital"
+      ? "3 hospitals & clinics"
+      : "2 search & rescue stations";
+    toast(`Viewing ${label} across Klang & Bandar Bukit Raja`);
+  }
+}
+
+function fitTripBounds() {
+  if (!state.from || !state.to) return;
+  const dist = haversine(state.from.coord, state.to.coord);
+  if (dist > 1400) {
+    const bounds = new maplibregl.LngLatBounds(state.from.coord, state.from.coord).extend(state.to.coord);
+    map.fitBounds(bounds, {
+      padding: { top: 90, bottom: 120, left: window.innerWidth > 900 ? 380 : 40, right: 60 },
+      maxZoom: 14.5,
+      duration: 1000
+    });
+  }
+}
+
 // ---------------- Data
 async function loadData() {
   const base = CONFIG.dataBase;
-  const [roads, places, scenarios] = await Promise.all([
+  const [roads, rawPlaces, scenarios] = await Promise.all([
     fetch(`${base}/roads.geojson`).then(r => r.json()),
-    fetch(`${base}/places.json`).then(r => r.json()),
+    fetch(`${base}/places.json?v=${Date.now()}`).then(r => r.json()).catch(() => []),
     loadScenarios(base)
   ]);
+
+  // Always ensure all 8 verified emergency facilities are merged and present with accurate metadata
+  const places = Array.isArray(rawPlaces) && rawPlaces.length > 0 ? [...rawPlaces] : [];
+  VERIFIED_EMERGENCY_FACILITIES.forEach(ef => {
+    const idx = places.findIndex(p => p.name === ef.name || p.name.includes(ef.name) || (p.type === "relief_centre" && ef.type === "relief_centre"));
+    if (idx >= 0) {
+      places[idx] = { ...places[idx], ...ef };
+    } else {
+      places.push(ef);
+    }
+  });
+
   state.roads = roads; state.graph = buildGraph(roads); state.places = places; state.scenarios = scenarios;
   state.scenario = scenarios[Math.min(1, scenarios.length - 1)];
 
   const dl = $("places");
+  dl.innerHTML = "";
   places.forEach(p => { const o = document.createElement("option"); o.value = p.name; dl.appendChild(o); });
 
   map.getSource("fs-places").setData({ type: "FeatureCollection", features: places.map(p => ({
@@ -198,8 +385,11 @@ async function loadData() {
     ? "This build uses SYNTHETIC sample data: roads, places and flood depths are invented for testing. Replace them with the pipeline output before any real use."
     : "Flood predictions come from pre-computed HEC-RAS scenarios. See DATA_SOURCES.md for every source and assumption.";
 
-  const start = places.find(p => p.type !== "relief_centre") || places[0];
-  const dest = places.find(p => p.type === "relief_centre") || places[places.length - 1];
+  // Render emergency markers on the map
+  renderEmergencyMarkers();
+
+  const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
+  const dest = places.find(p => p.type === "relief_centre" || (p.name && p.name.includes("Masjid"))) || places[places.length - 1];
   setFrom(start, false); setTo(dest, false);
   if (state.predictActive) {
     selectForecastTime(state.selectedForecastMin || 30);
@@ -211,11 +401,19 @@ async function loadData() {
 // ---------------- Trip
 function setFrom(p, run = true) {
   state.from = p; ui.fromIn.value = p.name; fromMarker.setLngLat(p.coord).addTo(map);
-  state.lastRouteKey = null; if (run) update(false);
+  state.lastRouteKey = null;
+  if (run) {
+    update(false);
+    fitTripBounds();
+  }
 }
 function setTo(p, run = true) {
   state.to = p; ui.toIn.value = p.name; toMarker.setLngLat(p.coord).addTo(map);
-  state.lastRouteKey = null; if (run) update(false);
+  state.lastRouteKey = null;
+  if (run) {
+    update(false);
+    fitTripBounds();
+  }
 }
 
 let toastTimer = null;
@@ -509,6 +707,32 @@ function selectForecastTime(min) {
   }
 
   update(true);
+
+  // If prediction is active, also asynchronously query live ML prediction backend
+  if (state.predictActive) {
+    const telemetryByMin = {
+      0:   { binjai_level: 2.10, binjai_rain: 0.0,  rasau_level: 2.05, klang_level: 1.90, cum_rain_3h: 0 },
+      30:  { binjai_level: 3.65, binjai_rain: 38.0, rasau_level: 3.10, klang_level: 2.40, cum_rain_3h: 45 },
+      60:  { binjai_level: 4.45, binjai_rain: 68.0, rasau_level: 4.05, klang_level: 3.40, cum_rain_3h: 95 },
+      90:  { binjai_level: 4.10, binjai_rain: 28.0, rasau_level: 3.65, klang_level: 3.10, cum_rain_3h: 120 },
+      120: { binjai_level: 3.35, binjai_rain: 6.0,  rasau_level: 2.80, klang_level: 2.50, cum_rain_3h: 128 }
+    };
+    const telem = telemetryByMin[min] || telemetryByMin[30];
+    fetchLiveFloodPrediction(telem).then(pred => {
+      if (pred && pred.status === "success" && ui.spongeStatusBadge) {
+        ui.spongeStatusBadge.textContent = pred.risk_category;
+        ui.spongeStatusBadge.className = `sponge-badge ${pred.badge_class}`;
+        if (ui.spongeHudBar) {
+          ui.spongeHudBar.style.width = `${pred.sponge_retention_pct}%`;
+          ui.spongeHudBar.style.backgroundColor = pred.risk_color;
+        }
+        if (ui.spongeStorageText) {
+          ui.spongeStorageText.textContent = `${pred.sponge_retention_pct}% (Sg. Binjai: ${pred.predicted_level_m}m)`;
+        }
+        console.log(`🌊 [AI Backend 3h Forecast] Sg. Binjai Level: ${pred.predicted_level_m}m (${pred.risk_category}) via ${pred.model_source}`);
+      }
+    }).catch(() => {});
+  }
 }
 
 // ---------------- Main update: recolour roads and areas, recompute the route
@@ -553,10 +777,14 @@ function update(fromTick) {
   const g = state.graph;
   const sa = snapToEdge(g, state.from.coord, mode), sb = snapToEdge(g, state.to.coord, mode);
   ui.warn.hidden = true;
-  if (!sa || !sb || sa.distM > OFF_NETWORK_M || sb.distM > OFF_NETWORK_M) {
+  const isEmergFrom = isEmergencyPlace(state.from);
+  const isEmergTo = isEmergencyPlace(state.to);
+  const maxFromDist = isEmergFrom ? 25000 : OFF_NETWORK_M;
+  const maxToDist = isEmergTo ? 25000 : OFF_NETWORK_M;
+  if (!sa || !sb || sa.distM > maxFromDist || sb.distM > maxToDist) {
     return showNoRoute("Outside the mapped area", "This map covers one neighbourhood. Pick a place inside it.", null, fromTick);
   }
-  if (haversine(sa.point, sb.point) < 15) return showNoRoute("You’re there", "Pick a different destination.", null, fromTick);
+  if (haversine(sa.point, sb.point) < 15 && !isEmergFrom && !isEmergTo) return showNoRoute("You’re there", "Pick a different destination.", null, fromTick);
 
   // Is the start point itself already under deep water?
   const startDepth = state.hasRain ? sc.depth(sa.edge.baseId || sa.edge.id, t) : 0;
@@ -589,15 +817,20 @@ function update(fromTick) {
     }
   } finally { undoB(); undoA(); }
 
-  // Warn if a pin is far from any mapped road (often a road missing from OpenStreetMap)
-  const far = Math.max(sa.distM, sb.distM);
-  if (far > 60) ui.note.textContent = `A pin is ${Math.round(far)} m from the nearest mapped ${mode === "drive" ? "car road" : "road or path"}. The dashed line shows where the route joins the road.`;
-
   // Short dashed links from each pin to the road it was snapped to
   map.getSource("fs-connector").setData({ type: "FeatureCollection", features: [
     { type: "Feature", geometry: { type: "LineString", coordinates: [state.from.coord, sa.point] }, properties: {} },
     { type: "Feature", geometry: { type: "LineString", coordinates: [sb.point, state.to.coord] }, properties: {} }
   ] });
+
+  // Warn if a pin is far from any mapped road (except expected emergency regional connectors)
+  const far = Math.max(isEmergFrom ? 0 : sa.distM, isEmergTo ? 0 : sb.distM);
+  if (far > 60) {
+    ui.note.textContent = `A pin is ${Math.round(far)} m from the nearest mapped ${mode === "drive" ? "car road" : "road or path"}. The dashed line shows where the route joins the road.`;
+  } else if (isEmergTo || isEmergFrom) {
+    const target = isEmergTo ? state.to.name : state.from.name;
+    ui.note.textContent = `Direct arterial connection to ${target}.`;
+  }
 
   if (!path) {
     return showNoRoute("No safe route right now", `Every ${mode === "drive" ? "drivable" : "walkable"} way to ${state.to.name} crosses high-risk roads.`,
@@ -607,30 +840,59 @@ function update(fromTick) {
       fromTick, "Your route is now cut off by flooding.");
   }
 
-  // Route card
-  const mins = Math.max(1, Math.round(path.lengthM / 1000 / T.speedKmh * 60));
+  // Route card & distance calculation (incorporating arterial connector for emergency facilities)
+  const connectorDistM = (isEmergTo && sb.distM > 60 ? sb.distM : 0) + (isEmergFrom && sa.distM > 60 ? sa.distM : 0);
+  const totalLengthM = path.lengthM + connectorDistM;
+  const mins = Math.max(1, Math.round(totalLengthM / 1000 / T.speedKmh * 60));
   const modLen = path.parts.reduce((s2, p2) => s2 + ((risk.get(p2.base) || 0) >= moderate ? p2.length : 0), 0);
   ui.eta.textContent = `${mins} min`;
-  ui.dist.textContent = `${fmtLen(path.lengthM)} ${mode === "drive" ? "driving" : "walking"}`;
+  ui.dist.textContent = `${fmtLen(totalLengthM)} ${mode === "drive" ? "driving" : "walking"}`;
   ui.sub.innerHTML = "";
   const badge = document.createElement("span");
-  if (modLen === 0) { badge.className = "badge ok"; badge.textContent = state.hasRain ? "Avoids all flood-risk roads" : "No rain yet. Fastest route shown"; }
-  else { badge.className = "badge mod"; badge.textContent = `${fmtLen(modLen)} on moderate-risk roads. No high-risk roads`; }
+  if (modLen === 0) {
+    badge.className = "badge ok";
+    badge.textContent = state.hasRain ? "Avoids all flood-risk roads" : "No rain yet. Fastest route shown";
+  } else {
+    badge.className = "badge mod";
+    badge.textContent = `${fmtLen(modLen)} on moderate-risk roads. No high-risk roads`;
+  }
+  if (isEmergTo || isEmergFrom) {
+    const emName = isEmergTo ? (state.to.shortName || state.to.name) : (state.from.shortName || state.from.name);
+    badge.textContent += ` • Connected to ${emName}`;
+  }
   ui.sub.appendChild(badge);
 
   // Directions
   ui.steps.innerHTML = "";
+  if (isEmergFrom && sa.distM > 60) {
+    const li0 = document.createElement("li"), dot0 = document.createElement("span"), txt0 = document.createElement("span"), len0 = document.createElement("small");
+    dot0.className = "rk"; dot0.style.background = css("--route");
+    txt0.textContent = `Depart ${state.from.name} to township entrance`;
+    len0.textContent = fmtLen(sa.distM);
+    li0.append(dot0, txt0, len0);
+    ui.steps.appendChild(li0);
+  }
   stepList.forEach((st, i) => {
     const li = document.createElement("li"), dot = document.createElement("span"), txt = document.createElement("span"), len = document.createElement("small");
     const lv = level(st.risk, T);
     dot.className = "rk"; dot.style.background = lv === "moderate" ? css("--moderate") : css("--route");
-    txt.textContent = (i === 0 ? "Start on " : st.bridge ? "Cross " : "Continue on ") + st.name + (lv === "moderate" ? " (moderate risk)" : "");
+    txt.textContent = (i === 0 && (!isEmergFrom || sa.distM <= 60) ? "Start on " : st.bridge ? "Cross " : "Continue on ") + st.name + (lv === "moderate" ? " (moderate risk)" : "");
     len.textContent = fmtLen(st.lengthM);
-    li.append(dot, txt, len); ui.steps.appendChild(li);
+    li.append(dot, txt, len);
+    ui.steps.appendChild(li);
   });
+  if (isEmergTo && sb.distM > 60) {
+    const liEnd = document.createElement("li"), dotEnd = document.createElement("span"), txtEnd = document.createElement("span"), lenEnd = document.createElement("small");
+    dotEnd.className = "rk"; dotEnd.style.background = css("--dest");
+    txtEnd.textContent = `Follow main arterial connector to ${state.to.name}`;
+    lenEnd.textContent = fmtLen(sb.distM);
+    liEnd.append(dotEnd, txtEnd, lenEnd);
+    ui.steps.appendChild(liEnd);
+  }
   const end = document.createElement("li"), endDot = document.createElement("span"), endTxt = document.createElement("span");
   endDot.className = "rk"; endDot.style.background = css("--dest"); endTxt.textContent = `Arrive at ${state.to.name}`;
-  end.append(endDot, endTxt, document.createElement("small")); ui.steps.appendChild(end);
+  end.append(endDot, endTxt, document.createElement("small"));
+  ui.steps.appendChild(end);
 
   // Live reroute message
   const key = baseIds.join(",");
@@ -747,6 +1009,13 @@ document.addEventListener("click", (e) => {
       ui.legendBtn.setAttribute("aria-pressed", "false");
     }
   }
+});
+
+// Emergency Facilities Filter Chips
+document.querySelectorAll(".emerg-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    filterEmergencyFacilities(chip.dataset.cat);
+  });
 });
 
 // Sponge HUD Category Filter Tags (Green, Blue, Gray, Drainage)

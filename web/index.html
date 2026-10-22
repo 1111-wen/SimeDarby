@@ -26,24 +26,66 @@
       <strong class="time-value" id="topTimeVal">9:00 AM</strong>
     </div>
 
-    <form class="trip" id="trip" autocomplete="off">
-      <span class="mark from" aria-hidden="true"></span>
-      <input id="fromIn" list="places" aria-label="Starting point" placeholder="Your location">
-      <button type="button" class="iconbtn" id="gpsBtn" aria-label="Use my location">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-      </button>
-      <span class="mark to" aria-hidden="true"></span>
-      <input id="toIn" list="places" aria-label="Destination" placeholder="Where to?">
-      <button type="button" class="iconbtn" id="swapBtn" aria-label="Swap start and destination">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4v14M3 14l4 4 4-4M17 20V6M13 10l4-4 4 4"/></svg>
-      </button>
-      <div class="modes" role="group" aria-label="Travel mode">
-        <button type="button" data-mode="drive" aria-pressed="true">Drive</button>
-        <button type="button" data-mode="walk" aria-pressed="false">Walk</button>
+    <!-- Left Navigation & Route Details Sidebar Stack -->
+    <div class="sidebar" id="sidebar">
+      <form class="trip" id="trip" autocomplete="off">
+        <span class="mark from" aria-hidden="true"></span>
+        <input id="fromIn" list="places" aria-label="Starting point" placeholder="Your location">
+        <button type="button" class="iconbtn" id="gpsBtn" aria-label="Use my location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        </button>
+        <span class="mark to" aria-hidden="true"></span>
+        <input id="toIn" list="places" aria-label="Destination" placeholder="Where to?">
+        <button type="button" class="iconbtn" id="swapBtn" aria-label="Swap start and destination">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 4v14M3 14l4 4 4-4M17 20V6M13 10l4-4 4 4"/></svg>
+        </button>
+        <div class="modes" role="group" aria-label="Travel mode">
+          <button type="button" data-mode="drive" aria-pressed="true">Drive</button>
+          <button type="button" data-mode="walk" aria-pressed="false">Walk</button>
+        </div>
+        <p class="note" id="note" aria-live="polite"></p>
+        <datalist id="places"></datalist>
+      </form>
+
+      <!-- Emergency Facilities Quick Filter Bar -->
+      <div class="emerg-bar" id="emergBar" role="toolbar" aria-label="Emergency Facilities">
+        <div class="emerg-bar-title">🚨 Emergency:</div>
+        <div class="emerg-chips">
+          <button type="button" class="emerg-chip active" data-cat="all" title="View all pinpointed emergency facilities">
+            All (8)
+          </button>
+          <button type="button" class="emerg-chip" data-cat="shelter" title="Evacuation Shelters">
+            🏢 Shelters (3)
+          </button>
+          <button type="button" class="emerg-chip" data-cat="hospital" title="Hospitals & Clinics">
+            🏥 Hospitals (3)
+          </button>
+          <button type="button" class="emerg-chip" data-cat="rescue" title="Search & Rescue Operations (Bomba)">
+            🚒 Rescue (2)
+          </button>
+        </div>
       </div>
-      <p class="note" id="note" aria-live="polite"></p>
-      <datalist id="places"></datalist>
-    </form>
+
+      <section class="sheet" aria-label="Route details">
+        <div class="grab" aria-hidden="true"></div>
+        <div class="inner">
+          <div class="routehead"><h1 id="eta">Loading…</h1><span id="dist"></span></div>
+          <p class="routesub" id="routeSub"></p>
+          <p class="warn" id="warn" hidden></p>
+
+          <ol class="steps" id="steps" aria-label="Directions"></ol>
+          <p class="meta" id="meta"></p>
+
+          <details>
+            <summary>About this app</summary>
+            <p id="dataNote"></p>
+            <p id="riskNote"></p>
+            <p><strong>Sponge City Framework (MSMA / JPS):</strong> Models Green (urban parks, green roofs, rain gardens), Blue (wetlands, retention basins, widened rivers), and Gray (permeable pavements, cisterns, culverts) infrastructure. As water rises to Warning (&ge;75%) and Danger (&ge;85%), overtopping triggers dynamic evacuation rerouting away from flooded roads toward safety / relief centres (Masjid Bandar Bukit Raja).</p>
+            <p>This app supports official warnings. Always follow instructions from Bomba and the authorities, and call 999 in an emergency.</p>
+          </details>
+        </div>
+      </section>
+    </div>
 
     <div class="camtoggle">
       <button type="button" id="cam3d" aria-pressed="true">3D</button>
@@ -72,26 +114,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="assertive"></div>
-
-    <section class="sheet" aria-label="Route details">
-      <div class="grab" aria-hidden="true"></div>
-      <div class="inner">
-        <div class="routehead"><h1 id="eta">Loading…</h1><span id="dist"></span></div>
-        <p class="routesub" id="routeSub"></p>
-        <p class="warn" id="warn" hidden></p>
-
-        <ol class="steps" id="steps" aria-label="Directions"></ol>
-        <p class="meta" id="meta"></p>
-
-        <details>
-          <summary>About this app</summary>
-          <p id="dataNote"></p>
-          <p id="riskNote"></p>
-          <p><strong>Sponge City Framework (MSMA / JPS):</strong> Models Green (urban parks, green roofs, rain gardens), Blue (wetlands, retention basins, widened rivers), and Gray (permeable pavements, cisterns, culverts) infrastructure. As water rises to Warning (&ge;75%) and Danger (&ge;85%), overtopping triggers dynamic evacuation rerouting away from flooded roads toward safety / relief centres (Masjid Bandar Bukit Raja).</p>
-          <p>This app supports official warnings. Always follow instructions from Bomba and the authorities, and call 999 in an emergency.</p>
-        </details>
-      </div>
-    </section>
 
     <!-- Predict Button & Forecast Time Selection at Bottom Middle of the Page -->
     <div class="predict-bar" id="predictBar" role="region" aria-label="Flood Prediction Controls">
@@ -134,6 +156,11 @@
           <div class="legend-row">
             <span><span class="sw" style="background:#37474f; border: 1.5px solid #212121;"></span>⚙️ Gray (Concrete Drains & RCBC Culverts)</span>
             <span><span class="sw" style="background:#00e5ff; border: 1.5px solid #002244;"></span>🚰 Active Drainage Flow</span>
+          </div>
+          <div class="legend-row legend-emerg-row">
+            <span><span class="sw emerg-sw shelter"></span>🏢 Emergency Shelters</span>
+            <span><span class="sw emerg-sw hospital"></span>🏥 Hospitals & Clinics</span>
+            <span><span class="sw emerg-sw rescue"></span>🚒 Search & Rescue (Bomba)</span>
           </div>
         </div>
       </div>

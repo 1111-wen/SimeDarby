@@ -5,6 +5,15 @@
   { "name": "Little Caliphs, Jalan Makyong 6A", "coord": [101.42785, 3.08874], "type": "place" },
   { "name": "D'Santai, Jalan Makyong 5B", "coord": [101.43054, 3.09033], "type": "place" },
   { "name": "Q-dees, Jalan Makyong 5C", "coord": [101.43097, 3.08989], "type": "place" },
-  { "name": "Masjid Bandar Bukit Raja (relief centre)", "coord": [101.42946, 3.08999], "type": "relief_centre",
-    "verified": true, "source": "Used as a temporary relief centre (PPS) in the June 2023 flash flood, per APM Selangor via Buletin TV3" }
+
+  { "name": "Masjid Bandar Bukit Raja (relief centre)", "shortName": "Masjid BBR (PPS)", "coord": [101.42946, 3.08999], "type": "relief_centre", "category": "shelter", "icon": "🏢", "verified": true, "address": "Jalan Makyong 5E/KU5, Bandar Bukit Raja, 41050 Klang", "desc": "Verified Official PPS Relief Shelter (APM / NADMA)" },
+  { "name": "Dewan Majlis Bandaraya Diraja Klang (MBDK)", "shortName": "Dewan MBDK", "coord": [101.443913, 3.044572], "type": "emergency_shelter", "category": "shelter", "icon": "🏢", "verified": true, "address": "Lorong Perbandaran, Kawasan 1, 41000 Klang", "desc": "Major Civic Hall Evacuation Centre (MBDK), Capacity: ~1,500 evacuees" },
+  { "name": "Grace Community Services", "shortName": "Grace Community", "coord": [101.465479, 3.054569], "type": "emergency_shelter", "category": "shelter", "icon": "🏢", "verified": true, "address": "7, Jalan Dendang 1, Pusat Bandar Berkeley, 41300 Klang", "desc": "Community Relief Shelter, Soup Kitchen & Emergency Food Bank" },
+
+  { "name": "Columbia Asia Hospital Klang", "shortName": "Columbia Asia", "coord": [101.446590, 3.085915], "type": "hospital", "category": "hospital", "icon": "🏥", "verified": true, "address": "1, Jalan Mahkota 1/KU 2, Bandar Bukit Raja, 41050 Klang", "desc": "24/7 Emergency Department & Multi-Specialty Hospital" },
+  { "name": "Hospital Tengku Ampuan Rahimah (HTAR)", "shortName": "HTAR Klang", "coord": [101.442338, 3.026846], "type": "hospital", "category": "hospital", "icon": "🏥", "verified": true, "address": "Jalan Langat, 41200 Klang", "desc": "Lead Public General Hospital & Level 1 Trauma Centre, Klang District" },
+  { "name": "Klinik Dr Rosli Bukit Raja", "shortName": "Klinik Dr Rosli", "coord": [101.431770, 3.090409], "type": "hospital", "category": "hospital", "icon": "🩺", "verified": true, "address": "19G, Jalan Makyong 5A/KU5, Bandar Bukit Raja, 41050 Klang", "desc": "24-Hour Community Medical Clinic & Flood Triage Station" },
+
+  { "name": "Klang Utara Fire and Rescue Station", "shortName": "Bomba Klang Utara", "coord": [101.442800, 3.060100], "type": "fire_station", "category": "rescue", "icon": "🚒", "verified": true, "address": "Batu 1 1/2, Jalan Kapar, Kawasan 18, 41400 Klang", "desc": "Balai Bomba dan Penyelamat (BBP) Sungai Pinang, Water Rescue Unit (PPDA)", "phone": "+603-3342 4444" },
+  { "name": "Klang Selatan Fire and Rescue Station", "shortName": "Bomba Klang Selatan", "coord": [101.447400, 3.042600], "type": "fire_station", "category": "rescue", "icon": "🚒", "verified": true, "address": "Jalan Gedung Raja Abdullah, Kawasan 1, 41000 Klang", "desc": "Balai Bomba dan Penyelamat (BBP) Kota Raja, Search & Rescue Operations Base", "phone": "+603-3371 4444" }
 ]

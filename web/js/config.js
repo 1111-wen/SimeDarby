@@ -14,7 +14,6 @@ export const CONFIG = {
   styleUrl: "https://tiles.openfreemap.org/styles/liberty",
 
   // Where the app loads roads, places and flood scenarios from.
-  // "./data/sample" is SYNTHETIC test data. Point this at the folder your pipeline produces.
   dataBase: "./data/bbr",
 
   // Travel modes. Risk levels are metres of water on the road. ASSUMPTIONS based on commonly cited
@@ -34,6 +33,9 @@ export const CONFIG = {
 
   // Live rainfall (roadmap). When enabled, rain.js polls fetchRainfallMmHr().
   liveRain: { enabled: false, pollMin: 10 },
+
+  // AI Hydrology Prediction Backend Server (Flask port 5000)
+  apiUrl: "http://localhost:5000",
 
   // Optional place search through OpenStreetMap Nominatim (low volume only; follow its usage policy).
   geocoder: { nominatim: false, countryCodes: "my" }

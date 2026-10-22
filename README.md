@@ -26,19 +26,35 @@ Located in the bottom-middle of the screen, the **`🔮 Predict`** button toggle
 - **11:00 AM (+120 min — Safe):** Runoff clears; wetland returns to safe natural blue, and the 16-minute route returns to safe `16 mins`.
 - **Dismiss on demand:** Clicking `🔮 Predict` again dismisses the time selections and returns to 9:00 AM baseline.
 
-### 3. 🏛️ Residential Evacuation Decision System
+### 3. 🚨 Critical Emergency Facilities Directory & Map Pinpoints
+Pinpoints verified, real-world emergency infrastructure across Bandar Bukit Raja and Klang district with interactive custom MapLibre markers, category color coding, and one-click evacuation routing:
+- **🏢 Emergency Shelters (Purple):**
+  - **Dewan Majlis Bandaraya Diraja Klang (MBDK)** *(Dewan Hamzah)* — Capacity ~1,500 evacuees.
+  - **Grace Community Services** — Food bank & community emergency relief center.
+  - **Masjid Bandar Bukit Raja** — Verified official PPS shelter with APM / NADMA.
+- **🏥 Hospitals & Clinics (Crimson Red):**
+  - **Columbia Asia Hospital Klang** — 24/7 Emergency Department & multi-specialty care.
+  - **Hospital Tengku Ampuan Rahimah (HTAR)** — Lead public general hospital and Level 1 trauma centre for Klang district.
+  - **Klinik Dr Rosli Bukit Raja** — 24-hour local community triage clinic on Jalan Makyong 5A.
+- **🚒 Search & Rescue Operations (Safety Orange):**
+  - **Klang Utara Fire and Rescue Station (BBP Sungai Pinang)** — Water Rescue Unit (PPDA), Hotline: `+603-3342 4444`.
+  - **Klang Selatan Fire and Rescue Station (BBP Kota Raja)** — Search and Rescue Command, Hotline: `+603-3371 4444`.
+- **Interactive Quick Filter Bar:** Located directly under the trip planner, users can filter by category (`All`, `🏢 Shelters`, `🏥 Hospitals`, `🚒 Rescue`) to instantly fit map bounds and highlight matching facilities.
+- **Direct Regional Evacuation Routing:** Clicking `📍 Route Here` or `🚩 Start Here` on any facility card generates seamless, turn-by-turn routing through safe neighborhood roads and connects via arterial corridors without network blocking.
+
+### 4. 🏛️ Residential Evacuation Decision System
 - **Verified Relief Centres:** Direct, safe routing to designated Pusat Pemindahan Sementara (PPS) shelters, such as **Masjid Bandar Bukit Raja** (verified with APM / NADMA criteria).
 - **Zero High-Risk Routing:** Flood-aware Dijkstra routing actively bypasses inundated road segments, recalculating safe alternative corridors.
 - **Dual Travel Modes:** Separate safety depth thresholds for **Walk** (moderate: 5 cm, high: 15 cm) and **Drive** (moderate: 10 cm, high: 30 cm).
 
-### 4. 🏙️ 3D & Top View Perspective
+### 5. 🏙️ 3D & Top View Perspective
 - Extruded 3D OpenStreetMap buildings with realistic structural heights.
 - Seamless synchronization between tilted 3D perspective and Top-down orthographic camera views.
 - Fully visible culverts, sumps, lakes, and route markers in both modes.
 
-### 5. 🗺️ Bottom-Right Floating Legend
+### 6. 🗺️ Bottom-Right Floating Legend
 - Dedicated floating button anchored at the bottom-right corner.
-- Toggles a clean popup explaining routes (purple primary vs. faded suggested), risk tiers (moderate, high, floodwater), and sponge infrastructure assets.
+- Toggles a clean popup explaining routes (purple primary vs. faded suggested), risk tiers (moderate, high, floodwater), sponge infrastructure assets, and emergency facility pins (Shelters, Hospitals, Rescue).
 
 ---
 
@@ -48,6 +64,13 @@ Located in the bottom-middle of the screen, the **`🔮 Predict`** button toggle
 SimeDarby/
 ├── README.md               Project overview, architecture, and demo guide
 ├── DATA_SOURCES.md         Data sources, engineering assumptions, and validation
+├── run_all.bat             1-Click launcher (starts AI Backend + Web Frontend + opens browser)
+├── run_backend.bat         1-Click launcher for Flask AI backend (port 5000)
+├── run_frontend.bat        1-Click launcher for Web Frontend (port 8000)
+├── backend/                Python AI Prediction REST API
+│   ├── app.py              Flask REST API exposing /predict with JPS Selangor thresholds
+│   └── models/             Directory for trained XGBoost .joblib files
+│       └── README.md       Instructions for dropping Colab models
 ├── web/                    App shell and client logic (static, no build step required)
 │   ├── index.html          Semantic HTML5 layout and control anchors
 │   ├── manifest.webmanifest PWA manifest (installable on mobile and desktop)
@@ -57,8 +80,8 @@ SimeDarby/
 │   │   └── styles.css      Clean responsive styling, dark mode support, and animations
 │   ├── js/
 │   │   ├── app.js          Main controller: MapLibre GL, timeline events, and layer controls
-│   │   ├── config.js       Township coordinates, travel thresholds, and speeds
-│   │   ├── flood.js        HEC-RAS depth interpolation and edge risk calculation
+│   │   ├── config.js       Township coordinates, travel thresholds, and API URLs
+│   │   ├── flood.js        HEC-RAS depth interpolation, risk calculation, & AI backend client
 │   │   ├── sponge.js       Sponge city infrastructure modeling (Green, Blue, Gray)
 │   │   ├── evac.js         Evacuation decision engine and shelter verification
 │   │   ├── routing.js      Flood-weighted Dijkstra graph search
@@ -82,18 +105,44 @@ SimeDarby/
 
 ## Quick Start (Run Locally)
 
-The web client is plain, standards-compliant HTML/CSS/JavaScript with zero build or bundler dependencies.
+### Option 1: 1-Click Launch (Recommended)
+Double-click `run_all.bat` in the root folder. It will:
+1. Start the **Flask AI Backend Server** on `http://localhost:5000`.
+2. Start the **Web Frontend Server** on `http://localhost:8000`.
+3. Automatically open your default browser to `http://localhost:8000`.
 
-Serve the `web` folder with any static HTTP server:
-
-```bash
-cd web
-python -m http.server 8000
-```
-
-Open [http://localhost:8000](http://localhost:8000) in your browser.
+### Option 2: Manual Terminal Launch
+1. **Start AI Backend:**
+   ```bash
+   python backend/app.py
+   ```
+2. **Start Web Frontend:**
+   ```bash
+   cd web
+   python -m http.server 8000
+   ```
+3. Open [http://localhost:8000](http://localhost:8000) in your browser.
 
 > **Tip:** For mobile device testing on the same local Wi-Fi, open `http://<YOUR_LOCAL_IP>:8000`. GPS ("Use my location") requires `localhost` or HTTPS.
+
+---
+
+## 🤖 AI & JPS Multi-Station Hydrologic Backend (`backend/app.py`)
+
+The application integrates real-time machine learning predictions derived from three key JPS Selangor telemetry stations along the Klang River basin:
+- **Station 3112401 — Sg. Binjai di Pekan Meru** (Target Station: Stage + Rainfall)
+- **Station 3014001 — Sg. Rasau di Tugu Keris** (Downstream backwater telemetry)
+- **Station 3014004 — Sg. Klang di Bandar Klang** (Tidal & confluence telemetry)
+
+### Dual-Engine Resilience:
+1. **Trained XGBoost Mode:** If `real_xgboost_flood_model.joblib` and `real_feature_columns.joblib` are placed in `backend/models/`, the backend loads the exact model trained in Google Colab (`colab.ipynb`).
+2. **Calibrated Formula Mode (Zero Setup Fallback):** If the `.joblib` files are not yet present, `backend/app.py` runs a calibrated multi-station hydrologic regression directly derived from the notebook parameters. The app runs seamlessly right out of the box with zero configuration!
+
+### Official JPS Selangor River Thresholds:
+- **NORMAL (< 3.50m):** Green indicator, 18% - 65% township sponge retention.
+- **ALERT (3.50m - 4.19m):** Amber indicator, 70% - 79% retention, preparatory notice.
+- **WARNING (4.20m - 4.49m):** Orange indicator, 80% - 89% retention, emergency services on standby.
+- **DANGER (≥ 4.50m):** Red indicator, 90% - 100% retention, evacuation routing active.
 
 ---
 

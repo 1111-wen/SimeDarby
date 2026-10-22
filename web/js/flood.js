@@ -64,3 +64,25 @@ export function pickScenario(scenarios, rainMmHr) {
   if (!ranked.length) return scenarios[0];
   return ranked.find(s => s.rainMmHr >= rainMmHr) || ranked[ranked.length - 1];
 }
+
+// Query live 3-hour flood level forecast from the Python AI backend (FastAPI / Flask)
+export async function fetchLiveFloodPrediction(telemetry = {}) {
+  const base = CONFIG.apiUrl || "http://localhost:5000";
+  try {
+    const params = new URLSearchParams();
+    if (telemetry.binjai_level != null) params.set("binjai_level", telemetry.binjai_level);
+    if (telemetry.binjai_rain != null) params.set("binjai_rain", telemetry.binjai_rain);
+    if (telemetry.rasau_level != null) params.set("rasau_level", telemetry.rasau_level);
+    if (telemetry.klang_level != null) params.set("klang_level", telemetry.klang_level);
+    if (telemetry.cum_rain_3h != null) params.set("cum_rain_3h", telemetry.cum_rain_3h);
+
+    const res = await fetch(`${base}/predict?${params.toString()}`, {
+      headers: { "Accept": "application/json" }
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    // Graceful fallback to offline/pre-computed scenarios
+    return null;
+  }
+}

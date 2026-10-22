@@ -1,6 +1,6 @@
 // Service worker: caches the app shell so the app opens quickly and installs as a PWA.
 // Uses network-first so changes and telemetry always stay in sync when connected, with offline cache fallback.
-const CACHE = "floodsafe-v21";
+const CACHE = "floodsafe-v24";
 const SHELL = [
   "./", "./index.html", "./css/styles.css", "./manifest.webmanifest", "./icons/icon.svg",
   "./js/app.js", "./js/config.js", "./js/flood.js", "./js/routing.js", "./js/geo.js", "./js/rain.js", "./js/sponge.js", "./js/evac.js"
@@ -23,8 +23,9 @@ self.addEventListener("fetch", e => {
   if (url.origin !== location.origin) return; // Map tiles and CDN assets bypass service worker
 
   // Network-first strategy: always fetch the latest file from server, update cache, fall back to cache when offline
+  const fetchOpts = url.pathname.includes("/data/") ? { cache: "no-store" } : {};
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, fetchOpts)
       .then(res => {
         const copy = res.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy));

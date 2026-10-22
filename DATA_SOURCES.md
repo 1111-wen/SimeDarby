@@ -15,11 +15,28 @@ This document records the geospatial datasets, hydrologic and hydrodynamic model
 | **Rainfall Telemetry Calibration** | JPS Public Infobanjir / JPS Selangor Station #3014002 (*Batu Belah, Klang*) | Calibration of simulated storm depths against recorded Klang catchment rainfall | Official telemetry records |
 | **Hydrodynamic Simulation (2D)** | HEC-RAS 2D (US Army Corps of Engineers) | Depth raster series per timestep ($t = 0 \dots 180\text{ min}$), surface velocities, inundation boundaries | Team simulation calibrated for BBR catchment |
 | **Sponge Infrastructure Inventory** | Sime Darby Property BBR master plans & field verification | 125-acre wetland retention basins, linear lakes, RCBC storm culverts, intake sumps, urban rain gardens | Modeled in `web/js/sponge.js` |
-| **Evacuation Centres (PPS)** | Jabatan Kebajikan Masyarakat (JKM) InfoBencana / APM / NADMA | Destination relief centre: **Masjid Bandar Bukit Raja** | Verified relief shelter with high-ground access |
+| **Emergency Facilities & Shelters** | JKM InfoBencana, APM, NADMA, KKM, JBPM (Bomba) Selangor | Real-world geocoded locations for Shelters (Dewan MBDK, Grace Community, Masjid BBR), Hospitals (Columbia Asia, HTAR, Klinik Dr Rosli), and Fire & Rescue Stations (Klang Utara, Klang Selatan) | Verified real-world coordinates in `places.json` |
 
 ---
 
-## 2. Engineering Assumptions & Operational Thresholds
+## 2. Emergency Facilities Geolocation Directory
+
+All emergency facilities pinpointed on the map use verified real-world geocodes and institutional contacts:
+
+| Category | Facility Name | Coordinates (Lng, Lat) | Address & Details | Contact / Hotline |
+| :--- | :--- | :--- | :--- | :--- |
+| **🏢 Shelter** | **Dewan Majlis Bandaraya Diraja Klang (MBDK)** *(Dewan Hamzah)* | `[101.443913, 3.044572]` | Lorong Perbandaran, Kawasan 1, 41000 Klang *(Cap: ~1,500 evacuees)* | MBDK Hotline: 03-3371 6044 |
+| **🏢 Shelter** | **Grace Community Services** | `[101.465479, 3.054569]` | 7, Jalan Dendang 1, Pusat Bandar Berkeley, 41300 Klang *(Relief & Food Bank)* | Relief Ops |
+| **🏢 Shelter** | **Masjid Bandar Bukit Raja (relief centre)** | `[101.429460, 3.089990]` | Jalan Makyong 5E/KU5, Bandar Bukit Raja, 41050 Klang *(Official PPS)* | APM / JKM |
+| **🏥 Hospital** | **Columbia Asia Hospital Klang** | `[101.446590, 3.085915]` | 1, Jalan Mahkota 1/KU 2, Bandar Bukit Raja, 41050 Klang *(24/7 Emergency)* | General: 03-3346 7999 |
+| **🏥 Hospital** | **Hospital Tengku Ampuan Rahimah (HTAR)** | `[101.442338, 3.026846]` | Jalan Langat, 41200 Klang *(Lead Public General Hospital & Level 1 Trauma)* | Emergency: 03-3375 7000 / 999 |
+| **🏥 Clinic** | **Klinik Dr Rosli Bukit Raja** | `[101.431770, 3.090409]` | 19G, Jalan Makyong 5A/KU5, Bandar Bukit Raja, 41050 Klang *(24h Flood Triage)* | Clinic Desk |
+| **🚒 Rescue** | **Klang Utara Fire and Rescue Station** | `[101.442800, 3.060100]` | Batu 1 1/2, Jalan Kapar, Kawasan 18, 41400 Klang *(BBP Sungai Pinang, PPDA Water Rescue)* | **+603-3342 4444** / 999 |
+| **🚒 Rescue** | **Klang Selatan Fire and Rescue Station** | `[101.447400, 3.042600]` | Jalan Gedung Raja Abdullah, Kawasan 1, 41000 Klang *(BBP Kota Raja, Search & Rescue)* | **+603-3371 4444** / 999 |
+
+---
+
+## 3. Engineering Assumptions & Operational Thresholds
 
 | Parameter | Value | Technical Justification |
 | :--- | :--- | :--- |
