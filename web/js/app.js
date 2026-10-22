@@ -381,9 +381,9 @@ async function loadData() {
   map.getSource("fs-places").setData({ type: "FeatureCollection", features: places.map(p => ({
     type: "Feature", geometry: { type: "Point", coordinates: p.coord }, properties: { name: p.name, type: p.type } })) });
 
-  ui.dataNote.textContent = scenarios.some(s => s.synthetic)
-    ? "This build uses SYNTHETIC sample data: roads, places and flood depths are invented for testing. Replace them with the pipeline output before any real use."
-    : "Flood predictions come from pre-computed HEC-RAS scenarios. See DATA_SOURCES.md for every source and assumption.";
+      ui.dataNote.innerHTML = scenarios.some(s => s.synthetic)
+        ? "<strong>Data.</strong> Roads, buildings, water bodies and drains come from OpenStreetMap. Places and emergency facilities come from public sources. The river-level model is trained on real JPS Public Infobanjir records (Oct–Dec 2024). Road flood depths and the river readings in the Predict timeline are simulated for this prototype, based on reported floods in Taman Kyra, Taman Casira and Jalan Makyong. They are not live or official forecasts."
+        : "<strong>Data.</strong> Roads, buildings, water bodies and drains come from OpenStreetMap. Flood predictions come from pre-computed HEC-RAS scenarios. See DATA_SOURCES.md for every source and assumption.";
 
   // Render emergency markers on the map
   renderEmergencyMarkers();
@@ -1044,14 +1044,14 @@ document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click"
   state.mode = b.dataset.mode;
   document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   if (map.getLayer("fs-risk-area")) map.setPaintProperty("fs-risk-area", "fill-color", areaColor());
-  $("riskNote").textContent = riskNote();
+  $("riskNote").innerHTML = riskNote();
   state.lastRouteKey = null; update(false);
 }));
 function riskNote() {
   const w = CONFIG.modes.walk, d = CONFIG.modes.drive, c = x => Math.round(x * 100);
-  return `Risk levels. Walking: moderate from ${c(w.moderate)} cm, high from ${c(w.high)} cm. Driving: moderate from ${c(d.moderate)} cm, high from ${c(d.high)} cm. Roads that will reach these depths within ${CONFIG.horizonMin} minutes are marked now. Your route avoids high-risk roads completely and avoids moderate-risk roads where it can. These thresholds are assumptions.`;
+  return `<strong>Risk levels.</strong> Walking: moderate from ${c(w.moderate)} cm, high from ${c(w.high)} cm. Driving: moderate from ${c(d.moderate)} cm, high from ${c(d.high)} cm. Roads that will reach these depths within ${CONFIG.horizonMin} minutes are marked now. Your route avoids high-risk roads completely and avoids moderate-risk roads where it can. These thresholds are assumptions based on common flood-safety guidance.`;
 }
-$("riskNote").textContent = riskNote();
+$("riskNote").innerHTML = riskNote();
 document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.mode === state.mode)));
 
 function set3DMode(enabled) {
