@@ -1335,29 +1335,48 @@ details p { margin: 6px 0; }
 .inundation-map-marker {
   position: relative;
   cursor: pointer;
-  transform: translate(-50%, -50%);
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .marker-bubble {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   background: #ffffff;
   color: #1e293b;
-  padding: 4px 9px;
+  padding: 5px 10px;
   border-radius: 16px;
   font-size: 11px;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
   border: 1.5px solid #94a3b8;
   white-space: nowrap;
-  transition: transform .18s ease, box-shadow .18s ease;
+  transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .18s ease;
+  margin-bottom: 5px;
+}
+
+/* Caret pointer beneath the pill pointing directly to the exact ground coordinate */
+.marker-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #94a3b8;
 }
 
 .inundation-map-marker:hover .marker-bubble {
   transform: scale(1.08);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  z-index: 100;
 }
 
 .marker-danger .marker-bubble {
@@ -1365,11 +1384,17 @@ details p { margin: 6px 0; }
   color: #ffffff;
   border-color: #991b1b;
 }
+.marker-danger .marker-bubble::after {
+  border-top-color: #dc2626;
+}
 
 .marker-warning .marker-bubble {
   background: #f59e0b;
   color: #ffffff;
   border-color: #b45309;
+}
+.marker-warning .marker-bubble::after {
+  border-top-color: #f59e0b;
 }
 
 .marker-safe .marker-bubble {
@@ -1377,15 +1402,38 @@ details p { margin: 6px 0; }
   color: #ffffff;
   border-color: #15803d;
 }
+.marker-safe .marker-bubble::after {
+  border-top-color: #16a34a;
+}
+
+/* Ground Anchor Pin Dot (exactly on coordinate) */
+.marker-pin-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  margin-top: -1px;
+}
+.marker-danger .marker-pin-dot {
+  background: #dc2626;
+}
+.marker-warning .marker-pin-dot {
+  background: #f59e0b;
+}
+.marker-safe .marker-pin-dot {
+  background: #16a34a;
+}
 
 .marker-pulse {
   position: absolute;
-  top: 50%;
+  bottom: 0px;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  border-radius: 20px;
+  transform: translate(-50%, 50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
   pointer-events: none;
 }
 

@@ -16,7 +16,7 @@ export const VULNERABILITY_ZONES = [
     name: "Jalan Makyong 5A/5B Residential Dips (BBR North)",
     shortName: "Jalan Makyong (Area A)",
     category: "residential",
-    coord: [101.4305, 3.0903],
+    coord: [101.4285, 3.0888], // Heart of Jalan Makyong residential dip (Makyong 5A/6A)
     groundElevationM: 4.20,
     riverFloodThresholdM: 4.40, // Late Warning
     crestSubmergenceCm: 45,
@@ -32,7 +32,7 @@ export const VULNERABILITY_ZONES = [
     name: "Taman Kyra & Casira Residential Blocks (BBR West)",
     shortName: "Taman Kyra (Area B)",
     category: "residential",
-    coord: [101.4135, 3.1020],
+    coord: [101.41287, 3.10591], // Exact Taman Kyra residential precinct (Jalan Ulek Mayang 1)
     groundElevationM: 4.60,
     riverFloodThresholdM: 4.75, // Higher ground threshold
     crestSubmergenceCm: 30,
@@ -48,7 +48,7 @@ export const VULNERABILITY_ZONES = [
     name: "Pekan Meru Low-Lying Riverbank & Market Dip",
     shortName: "Pekan Meru Riverbank",
     category: "commercial",
-    coord: [101.4415, 3.1382],
+    coord: [101.4385, 3.1365], // Exact Sg. Binjai bridge crossing & Pekan Meru riverbank (Station 3112401)
     groundElevationM: 3.80,
     riverFloodThresholdM: 4.20, // JPS Warning
     crestSubmergenceCm: 60,
@@ -64,7 +64,7 @@ export const VULNERABILITY_ZONES = [
     name: "Jalan Meru Commercial Junction & BBR Gateway",
     shortName: "Jalan Meru Junction",
     category: "arterial",
-    coord: [101.4385, 3.0982],
+    coord: [101.4395, 3.0970], // Gateway intersection connecting Persiaran Bukit Raja to Federal Route 5 (Jalan Meru)
     groundElevationM: 4.40,
     riverFloodThresholdM: 4.50, // JPS Danger
     crestSubmergenceCm: 50,
@@ -80,7 +80,7 @@ export const VULNERABILITY_ZONES = [
     name: "Bandar Bukit Raja Wetland Lake Perimeter",
     shortName: "BBR Wetland Park",
     category: "sponge",
-    coord: [101.4240, 3.0930],
+    coord: [101.41954, 3.09790], // Exact centroid of 125-acre Bandar Bukit Raja Wetland Lake
     groundElevationM: 4.10,
     riverFloodThresholdM: 4.30,
     crestSubmergenceCm: 35,
@@ -96,7 +96,7 @@ export const VULNERABILITY_ZONES = [
     name: "Persiaran Bukit Raja Spine & Masjid BBR (PPS)",
     shortName: "Masjid BBR (Safe High Ground)",
     category: "safe",
-    coord: [101.4295, 3.0899],
+    coord: [101.42946, 3.08999], // Exact official APM/NADMA PPS relief shelter: Masjid Bandar Bukit Raja
     groundElevationM: 5.60,
     riverFloodThresholdM: 6.20, // Extreme 100-year capacity
     crestSubmergenceCm: 0,
@@ -425,6 +425,7 @@ export function initInundationMarkers(map, onCardClick) {
         <span class="m-icon">${zone.icon}</span>
         <span class="m-label">${zone.shortName}</span>
       </div>
+      <div class="marker-pin-dot"></div>
       <div class="marker-pulse"></div>
     `;
 
@@ -434,7 +435,7 @@ export function initInundationMarkers(map, onCardClick) {
       if (onCardClick) onCardClick(zone);
     });
 
-    const m = new maplibregl.Marker({ element: el, anchor: "center" })
+    const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
       .setLngLat(zone.coord)
       .addTo(map);
 

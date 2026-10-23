@@ -1116,12 +1116,15 @@ function bindAreaCardClicks(container) {
         const zoneId = card.dataset.zoneId;
         const markerEl = document.getElementById(`marker-${zoneId}`);
         if (markerEl) {
-          markerEl.style.transform = "translate(-50%, -50%) scale(1.35)";
-          markerEl.style.zIndex = "999";
-          setTimeout(() => {
-            markerEl.style.transform = "translate(-50%, -50%) scale(1)";
-            markerEl.style.zIndex = "";
-          }, 1500);
+          const bubble = markerEl.querySelector(".marker-bubble");
+          if (bubble) {
+            bubble.style.transform = "scale(1.28)";
+            markerEl.style.zIndex = "999";
+            setTimeout(() => {
+              bubble.style.transform = "";
+              markerEl.style.zIndex = "";
+            }, 1500);
+          }
         }
       }
     });
