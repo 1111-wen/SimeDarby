@@ -600,4 +600,157 @@ export function updateInundationMarkers(scheduleList) {
       bindPopupActions(popupContent, zone, popup);
     }
   });
+
+  // Automatically update the Risk Section Widget counts and areas
+  renderRiskSectionWidget(scheduleList, currentSectionFilter);
+}
+
+
+let currentSectionFilter = "all";
+
+export function renderRiskSectionWidget(scheduleList, activeSection = currentSectionFilter) {
+  currentSectionFilter = activeSection;
+
+  const countAll = document.getElementById("countAll");
+  const countFlooded = document.getElementById("countFlooded");
+  const countHigh = document.getElementById("countHigh");
+  const countModerate = document.getElementById("countModerate");
+  const countSafe = document.getElementById("countSafe");
+  const areasList = document.getElementById("riskSectionAreasList");
+
+  if (!areasList || !scheduleList || scheduleList.length === 0) return;
+
+  // Classify areas into sections
+  const floodedList = scheduleList.filter(z => z.status === "CURRENT_FLOOD");
+  const highRiskList = scheduleList.filter(z => z.status === "PREDICTED_FLOOD" || (z.willFlood && z.spareTimeMin <= 15));
+  const moderateList = scheduleList.filter(z => z.status === "WARNING");
+  const safeList = scheduleList.filter(z => z.status === "SAFE");
+
+  // Update badge counts on buttons
+  if (countAll) countAll.textContent = scheduleList.length;
+  if (countFlooded) countFlooded.textContent = floodedList.length;
+  if (countHigh) countHigh.textContent = highRiskList.length;
+  if (countModerate) countModerate.textContent = moderateList.length;
+  if (countSafe) countSafe.textContent = safeList.length;
+
+  // Filter items for active section
+  let filtered = scheduleList;
+  if (activeSection === "flooded") filtered = floodedList;
+  else if (activeSection === "high") filtered = highRiskList;
+  else if (activeSection === "moderate") filtered = moderateList;
+  else if (activeSection === "safe") filtered = safeList;
+
+  // Filter/highlight map pins according to section
+  zoneMarkers.forEach(({ zone, el }) => {
+    if (activeSection === "all") {
+      el.style.opacity = "1";
+    } else {
+      const isIncluded = filtered.some(f => f.id === zone.id);
+      el.style.opacity = isIncluded ? "1" : "0.22";
+    }
+  });
+
+  if (filtered.length === 0) {
+    const sectionNames = {
+      flooded: "currently flooded",
+      high: "at high risk",
+      moderate: "with moderate ponding",
+      safe: "safe"
+    };
+    areasList.innerHTML = `
+      <div style="text-align:center; padding:16px 8px; color:var(--muted); font-size:12px;">
+        ✅ No areas ${sectionNames[activeSection] || "found"}.
+      </div>
+    `;
+    return;
+  }
+
+  areasList.innerHTML = filtered.map(item => {
+    let cardCls = "card-safe";
+    let badgeCls = "badge-safe";
+    let depthCls = "safe-tag";
+    let depthLabel = "Dry & Passable";
+
+    if (item.status === "CURRENT_FLOOD") {
+      cardCls = "card-flooded";
+      badgeCls = "badge-danger";
+      depthCls = "";
+      depthLabel = `🌊 ${item.depthCm}cm submerged`;
+    } else if (item.status === "PREDICTED_FLOOD") {
+      cardCls = "card-high";
+      badgeCls = "badge-danger";
+      depthCls = "";
+      depthLabel = `🌊 ${item.depthCm}cm inbound`;
+    } else if (item.status === "WARNING") {
+      cardCls = "card-moderate";
+      badgeCls = "badge-warning";
+      depthCls = "warn-tag";
+      depthLabel = `⚠️ ${item.depthCm}cm ponding`;
+    }
+
+    return `
+      <div class="risk-area-card ${cardCls}" data-zone-id="${item.id}" title="Click to view ${item.name} on map">
+        <div class="risk-area-head">
+          <div class="risk-area-name">
+            <span>${item.icon}</span>
+            <span>${item.shortName}</span>
+          </div>
+          <span class="sponge-badge ${badgeCls}">${item.badgeText}</span>
+        </div>
+        <div class="risk-area-timing">
+          <span>⏱️ ${item.timeText}</span>
+          <span class="risk-area-depth-tag ${depthCls}">${depthLabel}</span>
+        </div>
+        <div class="risk-area-bypass">
+          🛡️ ${item.safeBypass}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Bind clicks on cards to open map popup
+  areasList.querySelectorAll(".risk-area-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const zoneId = card.dataset.zoneId;
+      if (zoneId) {
+        openZonePopup(zoneId);
+      }
+    });
+  });
+}
+
+export function initRiskSectionControls() {
+  const btnTrigger = document.getElementById("riskAlertBtn");
+  const panel = document.getElementById("riskSectionPanel");
+  const btnClose = document.getElementById("riskPanelClose");
+  const chips = document.querySelectorAll(".risk-chip");
+
+  if (btnTrigger && panel) {
+    btnTrigger.onclick = () => {
+      const isHidden = panel.hidden;
+      panel.hidden = !isHidden;
+      btnTrigger.setAttribute("aria-expanded", String(isHidden));
+      if (isHidden) {
+        renderRiskSectionWidget(currentSchedule, currentSectionFilter);
+      }
+    };
+  }
+
+  if (btnClose && panel) {
+    btnClose.onclick = () => {
+      panel.hidden = true;
+      if (btnTrigger) btnTrigger.setAttribute("aria-expanded", "false");
+      // Reset pin opacities
+      zoneMarkers.forEach(({ el }) => { el.style.opacity = "1"; });
+    };
+  }
+
+  chips.forEach(chip => {
+    chip.onclick = () => {
+      chips.forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      const section = chip.dataset.section;
+      renderRiskSectionWidget(currentSchedule, section);
+    };
+  });
 }

@@ -497,17 +497,63 @@ details p { margin: 6px 0; }
 .pickpop button:first-child { background: var(--ink); color: var(--panel); border-color: var(--ink); }
 .pin { cursor: grab; }
 
-/* Sponge Township & Drainage System HUD (MSMA / JPS Guidelines) */
-.sponge-hud {
-  position: absolute; right: 12px; top: 62px; z-index: 2; width: 260px;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
-  box-shadow: var(--shadow); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;
-  transition: all .25s ease;
+/* Flood Risk Alert & Area Sections Widget */
+.risk-section-widget {
+  position: absolute;
+  right: 14px;
+  top: 62px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
-@media (max-width: 899px) { .sponge-hud { top: 290px; width: 240px; padding: 10px 12px; } }
 
-.sponge-hud-head { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-.sponge-hud-title { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+@media (max-width: 899px) {
+  .risk-section-widget {
+    top: 286px;
+    right: 10px;
+  }
+}
+
+/* Alert / Warning Sign Trigger Button */
+.risk-alert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  padding: 7px 13px;
+  border-radius: 22px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--ink);
+  transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.risk-alert-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  border-color: #f59e0b;
+}
+
+.risk-alert-icon {
+  font-size: 18px;
+  line-height: 1;
+  animation: alert-pulse 2s infinite ease-in-out;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.22); }
+}
+
+.risk-alert-text {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
 
 .sponge-badge {
   font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
@@ -524,34 +570,210 @@ details p { margin: 6px 0; }
   100% { box-shadow: 0 0 0 0 rgba(198, 40, 40, 0); }
 }
 
-.sponge-hud-meter {
-  width: 100%; height: 7px; border-radius: 4px; background: var(--line); overflow: hidden;
+/* Expandable Area Risk Sections Panel */
+.risk-section-panel {
+  margin-top: 8px;
+  width: 330px;
+  max-width: calc(100vw - 24px);
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: slideDownRisk .2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 75vh;
+  box-sizing: border-box;
 }
-.sponge-hud-bar {
-  height: 100%; border-radius: 4px; background: #2e7d32; transition: width .3s ease, background-color .3s ease;
+
+@keyframes slideDownRisk {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-.sponge-hud-stats {
-  display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted);
-  font-variant-numeric: tabular-nums;
+
+.risk-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
 }
-.sponge-hud-tags {
-  display: flex; gap: 5px; flex-wrap: wrap; margin-top: 2px;
+
+.risk-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink);
 }
-.sponge-hud-tags .tag {
-  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: var(--surface);
-  border: 1px solid var(--line); color: var(--ink); cursor: pointer; transition: all .18s ease;
-  user-select: none; display: inline-flex; align-items: center; justify-content: center;
+
+.risk-panel-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
 }
-.sponge-hud-tags .tag:hover {
-  transform: translateY(-1px); filter: brightness(0.96); box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+.risk-panel-close:hover {
+  background: var(--surface);
+  color: var(--ink);
 }
-.sponge-hud-tags .tag.active-tag {
-  outline: 2px solid var(--ink); font-weight: 700; transform: scale(1.04); box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+
+/* Section Filter Buttons: Flooded / High Risk / Moderate / Safe */
+.risk-filter-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
 }
-.sponge-hud-tags .tag.drain { border-color: #00e5ff; color: #006064; background: #e0f7fa; font-weight: 700; }
-.sponge-hud-tags .tag.green { border-color: #a5d6a7; color: #2e7d32; background: #e8f5e9; }
-.sponge-hud-tags .tag.blue { border-color: #81d4fa; color: #0277bd; background: #e1f5fe; }
-.sponge-hud-tags .tag.gray { border-color: #b0bec5; color: #37474f; background: #eceff1; }
+
+.risk-chip {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all .15s ease;
+  white-space: nowrap;
+}
+
+.risk-chip:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+.risk-chip.active {
+  background: var(--ink);
+  color: var(--panel);
+  border-color: var(--ink);
+}
+
+.risk-chip.chip-flooded.active {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #991b1b;
+}
+
+.risk-chip.chip-high.active {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #c2410c;
+}
+
+.risk-chip.chip-moderate.active {
+  background: #f59e0b;
+  color: #ffffff;
+  border-color: #b45309;
+}
+
+.risk-chip.chip-safe.active {
+  background: #16a34a;
+  color: #ffffff;
+  border-color: #15803d;
+}
+
+/* Areas List */
+.risk-section-areas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 340px;
+  padding-right: 2px;
+}
+
+.risk-area-card {
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .16s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.risk-area-card:hover {
+  border-color: #3b82f6;
+  background: var(--panel);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.risk-area-card.card-flooded {
+  border-left: 4px solid #dc2626;
+}
+
+.risk-area-card.card-high {
+  border-left: 4px solid #ea580c;
+}
+
+.risk-area-card.card-moderate {
+  border-left: 4px solid #f59e0b;
+}
+
+.risk-area-card.card-safe {
+  border-left: 4px solid #16a34a;
+}
+
+.risk-area-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.risk-area-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.risk-area-timing {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.risk-area-depth-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.risk-area-depth-tag.safe-tag {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.risk-area-depth-tag.warn-tag {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.risk-area-bypass {
+  font-size: 10.5px;
+  color: var(--muted);
+  line-height: 1.35;
+}
 
 /* Sponge Feature Popups */
 .sponge-pop { min-width: 250px; font-family: inherit; font-size: 13px; line-height: 1.4; color: var(--ink); }

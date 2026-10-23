@@ -148,15 +148,40 @@
       <button type="button" id="camTop" aria-pressed="false">Top</button>
     </div>
 
-    <!-- Sponge Township & Drainage System HUD (MSMA / JPS Guidelines) -->
-    <div class="sponge-hud" id="spongeHud" aria-label="Sponge Township Status">
-      <div class="sponge-hud-head">
-        <span class="sponge-hud-title">Sponge Township</span>
+    <!-- Flood Risk Alert & Area Sections Widget (Replaces bulky Sponge HUD) -->
+    <div class="risk-section-widget" id="riskSectionWidget">
+      <!-- Alert / Warning Sign Trigger Button -->
+      <button type="button" class="risk-alert-btn" id="riskAlertBtn" aria-label="Flood Risk Status & Area Sections" aria-expanded="false" title="Click to view Flood Risk Areas by section">
+        <span class="risk-alert-icon">⚠️</span>
+        <span class="risk-alert-text">Flood Risks</span>
         <span class="sponge-badge badge-safe" id="spongeStatusBadge">Normal (Safe)</span>
+      </button>
+
+      <!-- Expandable Area Risk Sections Panel -->
+      <div class="risk-section-panel" id="riskSectionPanel" hidden>
+        <div class="risk-panel-header">
+          <div class="risk-panel-title">
+            <span class="risk-panel-icon">⚠️</span>
+            <strong>Area Flood Risk Sections</strong>
+          </div>
+          <button type="button" class="risk-panel-close" id="riskPanelClose" aria-label="Close risk sections">&times;</button>
+        </div>
+
+        <!-- Section Filter Buttons: All / Flooded / High Risk / Moderate / Safe -->
+        <div class="risk-filter-chips" role="group" aria-label="Filter areas by risk level">
+          <button type="button" class="risk-chip active" data-section="all" id="chipAll">All (<span id="countAll">6</span>)</button>
+          <button type="button" class="risk-chip chip-flooded" data-section="flooded" id="chipFlooded">🔴 Flooded (<span id="countFlooded">0</span>)</button>
+          <button type="button" class="risk-chip chip-high" data-section="high" id="chipHigh">🚨 High Risk (<span id="countHigh">0</span>)</button>
+          <button type="button" class="risk-chip chip-moderate" data-section="moderate" id="chipModerate">🟠 Moderate (<span id="countModerate">0</span>)</button>
+          <button type="button" class="risk-chip chip-safe" data-section="safe" id="chipSafe">🟢 Safe (<span id="countSafe">0</span>)</button>
+        </div>
+
+        <!-- Areas List for the Selected Section -->
+        <div class="risk-section-areas" id="riskSectionAreasList">
+          <!-- Dynamically populated with area cards according to each section -->
+        </div>
       </div>
-      <div class="sponge-hud-meter">
-        <div class="sponge-hud-bar" id="spongeHudBar" style="width: 18%;"></div>
-      </div>
+    </div>
       <div class="sponge-hud-stats">
         <span>Retention: <strong id="spongeStorageText">18% (14,200 m³)</strong></span>
         <span id="spongeRainText" style="color:var(--water); font-weight:600;">Dry</span>

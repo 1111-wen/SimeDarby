@@ -5,7 +5,7 @@ import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps,
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
 import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, setSponge3DMode, setPredictLakeHighlight, getTownshipSpongeSummary, filterSpongeCategory } from "./sponge.js";
-import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, initInundationMarkers, updateInundationMarkers, openZonePopup, VULNERABILITY_ZONES } from "./inundation.js";
+import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, initInundationMarkers, updateInundationMarkers, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, VULNERABILITY_ZONES } from "./inundation.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -467,6 +467,9 @@ async function loadData() {
       toast(`🚗 Routing safe evacuation: ${zone.shortName} ➔ Masjid BBR (PPS)`);
     }
   });
+
+  // Initialize Risk Section Alert button & expandable filter controls
+  initRiskSectionControls();
 
   const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
   const dest = places.find(p => p.type === "relief_centre" || (p.name && p.name.includes("Masjid"))) || places[places.length - 1];
