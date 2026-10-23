@@ -588,6 +588,10 @@ details p { margin: 6px 0; }
   box-sizing: border-box;
 }
 
+.risk-section-panel[hidden] {
+  display: none !important;
+}
+
 @keyframes slideDownRisk {
   from { opacity: 0; transform: translateY(-8px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -612,16 +616,23 @@ details p { margin: 6px 0; }
 .risk-panel-close {
   background: transparent;
   border: none;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   color: var(--muted);
   cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+  pointer-events: auto;
 }
 .risk-panel-close:hover {
   background: var(--surface);
   color: var(--ink);
+  transform: scale(1.08);
 }
 
 /* Section Filter Buttons: Flooded / High Risk / Moderate / Safe */

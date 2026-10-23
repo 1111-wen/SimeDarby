@@ -1408,37 +1408,54 @@ export function initRiskSectionControls() {
   const btnClose = document.getElementById("riskPanelClose");
   const chips = document.querySelectorAll(".risk-chip");
 
+  const closePanel = () => {
+    if (!panel) return;
+    panel.hidden = true;
+    panel.style.display = "none";
+    if (btnTrigger) btnTrigger.setAttribute("aria-expanded", "false");
+    currentSectionFilter = "all";
+    chips.forEach(c => {
+      if (c.dataset.section === "all") c.classList.add("active");
+      else c.classList.remove("active");
+    });
+    // Restore all markers and all area polygons
+    zoneMarkers.forEach(({ el }) => {
+      el.style.display = "";
+      el.style.opacity = "1";
+    });
+    updateAreaZonePolygons(currentSchedule, "all");
+  };
+
+  const openPanel = () => {
+    if (!panel) return;
+    panel.hidden = false;
+    panel.style.display = "flex";
+    if (btnTrigger) btnTrigger.setAttribute("aria-expanded", "true");
+    renderRiskSectionWidget(currentSchedule, currentSectionFilter);
+  };
+
   if (btnTrigger && panel) {
-    btnTrigger.onclick = () => {
-      const isHidden = panel.hidden;
-      panel.hidden = !isHidden;
-      btnTrigger.setAttribute("aria-expanded", String(isHidden));
+    btnTrigger.onclick = (e) => {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      const isHidden = panel.hidden || panel.style.display === "none";
       if (isHidden) {
-        renderRiskSectionWidget(currentSchedule, currentSectionFilter);
+        openPanel();
+      } else {
+        closePanel();
       }
     };
   }
 
-  if (btnClose && panel) {
-    btnClose.onclick = () => {
-      panel.hidden = true;
-      if (btnTrigger) btnTrigger.setAttribute("aria-expanded", "false");
-      currentSectionFilter = "all";
-      chips.forEach(c => {
-        if (c.dataset.section === "all") c.classList.add("active");
-        else c.classList.remove("active");
-      });
-      // Restore all markers and all area polygons
-      zoneMarkers.forEach(({ el }) => {
-        el.style.display = "";
-        el.style.opacity = "1";
-      });
-      updateAreaZonePolygons(currentSchedule, "all");
+  if (btnClose) {
+    btnClose.onclick = (e) => {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      closePanel();
     };
   }
 
   chips.forEach(chip => {
-    chip.onclick = () => {
+    chip.onclick = (e) => {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
       chips.forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       const section = chip.dataset.section;
