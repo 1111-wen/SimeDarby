@@ -806,7 +806,7 @@ export function computeAreaFloodSchedule(currentWl, predWl, currentTimestampStr 
   const pred = Number(predWl) || current;
   const ratePerHour = (pred - current) / 3.0; // m per hour over 3-hour lead window
 
-  return VULNERABILITY_ZONES.map(zone => {
+  const schedule = VULNERABILITY_ZONES.map(zone => {
     const thresh = zone.riverFloodThresholdM;
     const elev = zone.groundElevationM;
     let status = "SAFE"; // SAFE | WARNING | PREDICTED_FLOOD | CURRENT_FLOOD
@@ -929,6 +929,9 @@ export function computeAreaFloodSchedule(currentWl, predWl, currentTimestampStr 
       urgencyCls
     };
   });
+
+  currentSchedule = schedule;
+  return schedule;
 }
 
 /**
@@ -1188,7 +1191,7 @@ export function renderAreaScheduleHtml(scheduleList) {
 // Map markers for vulnerability zones (Teardrop Pin & Map-Locked Popup like Shelter/Bomba/Hospital)
 let zoneMarkers = [];
 let mapInstance = null;
-let currentSchedule = [];
+export let currentSchedule = [];
 let actionCallbacks = {};
 
 function buildPopupHtml(zone, data) {
@@ -1445,10 +1448,17 @@ export function updateInundationMarkers(scheduleList, activeCategory = currentSe
 }
 
 
-let currentSectionFilter = "all";
+export let currentSectionFilter = "all";
 
 export function renderRiskSectionWidget(scheduleList, activeSection = currentSectionFilter) {
   currentSectionFilter = activeSection;
+
+  if (!scheduleList || scheduleList.length === 0) {
+    scheduleList = currentSchedule;
+  }
+  if (!scheduleList || scheduleList.length === 0) {
+    scheduleList = computeAreaFloodSchedule(3.93, 3.90);
+  }
 
   const countAll = document.getElementById("countAll");
   const countFlooded = document.getElementById("countFlooded");
@@ -1591,7 +1601,7 @@ export function renderRiskSectionWidget(scheduleList, activeSection = currentSec
   });
 }
 
-export function initRiskSectionControls() {
+export function initRiskSectionControls(onOpenCallback) {
   const btnTrigger = document.getElementById("riskAlertBtn");
   const panel = document.getElementById("riskSectionPanel");
   const btnClose = document.getElementById("riskPanelClose");
@@ -1634,6 +1644,7 @@ export function initRiskSectionControls() {
       reportModal.style.display = "none";
     }
     if (reportBtn) reportBtn.setAttribute("aria-pressed", "false");
+    if (onOpenCallback) onOpenCallback();
     renderRiskSectionWidget(currentSchedule, currentSectionFilter);
   };
 
@@ -1746,6 +1757,13 @@ export function initAreaZoneLayers(map) {
 
 export function updateAreaZonePolygons(scheduleList, activeSection = "all") {
   if (!mapInstance || !mapInstance.getSource("fs-area-zones")) return;
+
+  if (!scheduleList || scheduleList.length === 0) {
+    scheduleList = currentSchedule;
+  }
+  if (!scheduleList || scheduleList.length === 0) {
+    scheduleList = computeAreaFloodSchedule(3.93, 3.90);
+  }
 
   const mapByZoneId = new Map((scheduleList || []).map(s => [s.id, s]));
 

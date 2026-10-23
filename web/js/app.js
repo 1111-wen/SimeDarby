@@ -7,7 +7,7 @@ import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps,
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
 import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, setSponge3DMode, setPredictLakeHighlight, getTownshipSpongeSummary, filterSpongeCategory } from "./sponge.js";
-import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, formatForecastOffsetTime, initInundationMarkers, updateInundationMarkers, filterInundationMarkersByCategory, updateAreaZonePolygons, resetZoneFilters, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, VULNERABILITY_ZONES } from "./inundation.js";
+import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, formatForecastOffsetTime, initInundationMarkers, updateInundationMarkers, filterInundationMarkersByCategory, updateAreaZonePolygons, resetZoneFilters, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, currentSchedule, currentSectionFilter, VULNERABILITY_ZONES } from "./inundation.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -475,7 +475,9 @@ async function loadData() {
   });
 
   // Initialize Risk Section Alert button & expandable filter controls
-  initRiskSectionControls();
+  initRiskSectionControls(() => {
+    updatePredictModalView(0, "all");
+  });
 
   // Initialize Crowd-sourced Citizen Flood Reporting markers & modal
   initCommunityReportMarkers(map, (zoneId) => {
@@ -1171,10 +1173,16 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
     bindAreaCardClicks(ui.q4AreaScheduleSlot);
   }
 
-  // Update map markers, badges, and polygons according to activeCategory only when a forecast time is selected
+  const riskPanel = document.getElementById("riskSectionPanel");
+  const isRiskPanelOpen = riskPanel && !riskPanel.hidden && riskPanel.style.display !== "none";
+
+  // Update map markers, badges, and polygons
   if (state.predictActive && state.predictTimeSelected) {
     updateInundationMarkers(schedule, activeCategory);
+  } else if (isRiskPanelOpen) {
+    updateInundationMarkers(schedule, currentSectionFilter || "all");
   } else {
+    updateAreaZonePolygons(schedule, "all");
     resetZoneFilters();
   }
 }
@@ -1976,6 +1984,19 @@ if (ui.predictBtn) {
     } else {
       closePredictModal();
     }
+  });
+}
+
+// Risk Alert Button (⚠️ Flood Risks)
+const riskAlertBtnTop = document.getElementById("riskAlertBtn");
+if (riskAlertBtnTop) {
+  riskAlertBtnTop.addEventListener("click", () => {
+    setTimeout(() => {
+      const riskPanel = document.getElementById("riskSectionPanel");
+      if (riskPanel && !riskPanel.hidden && riskPanel.style.display !== "none") {
+        updatePredictModalView(0, currentSectionFilter || "all");
+      }
+    }, 15);
   });
 }
 
