@@ -169,6 +169,12 @@
           <span class="report-btn-icon">📢</span>
           <span class="report-btn-label">Report</span>
         </button>
+
+        <!-- 3-Hour Flood & Evacuation Alert Button (Directly under Report) -->
+        <button type="button" class="evac-alert-btn-main" id="evacAlertBtn" aria-pressed="false" title="3-Hour Flood Inundation & Evacuation Alert">
+          <span class="evac-alert-btn-icon">🚨</span>
+          <span class="evac-alert-btn-label">Alert</span>
+        </button>
       </div>
 
       <!-- 2. Side Action Panels Container (Opens NEXT TO the buttons on the left!) -->
@@ -201,6 +207,11 @@
         <!-- Expandable Predict Forecast & Time Selection Panel -->
         <div class="predict-time-popup" id="predictTimePopup" hidden>
           <div id="predictPanelSlot"></div>
+        </div>
+
+        <!-- 3-Hour Flood Inundation & Evacuation Alert Panel -->
+        <div class="evac-alert-panel" id="evacAlertPanel" hidden>
+          <div id="evacAlertPanelSlot"></div>
         </div>
       </div>
     </div>

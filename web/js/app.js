@@ -1,5 +1,6 @@
 import { initCommunityReportMarkers, showCommunityReportOnMap, COMMUNITY_REPORTS } from "./community_reports.js";
 import { initReportModal, openReportModal, closeReportModal } from "./report_modal.js";
+import { initEvacAlertWidget, openEvacAlertPanel, closeEvacAlertPanel, updateEvacAlertView, isEvacAlertOpen } from "./evac_alert.js";
 // FloodSafe Route: main app. Wires the map, flood scenarios, routing and the UI together.
 import { CONFIG } from "./config.js";
 import { loadScenarios, pickScenario, level, fetchLiveFloodPrediction } from "./flood.js";
@@ -19,6 +20,7 @@ const ui = {
   predictBtn: $("predictBtn"), predictTimePopup: $("predictTimePopup"),
   predictPanelSlot: $("predictPanelSlot"),
   reportBtn: $("reportBtn"), reportFloodModal: $("reportFloodModal"), reportModalSlot: $("reportModalSlot"),
+  evacAlertBtn: $("evacAlertBtn"), evacAlertPanel: $("evacAlertPanel"), evacAlertPanelSlot: $("evacAlertPanelSlot"),
   areaScheduleContainer: $("areaScheduleContainer"),
   q4AreaScheduleSlot: $("q4AreaScheduleSlot"),
   topTimeBar: $("topTimeBar"), topTimeVal: $("topTimeVal"),
@@ -488,6 +490,42 @@ async function loadData() {
       toast(`📢 Report Added: (${record.count} people reported) in this area!`);
     });
   }
+
+  // Initialize 3-Hour Flood Inundation & Evacuation Alert
+  initEvacAlertWidget({
+    map,
+    state,
+    getMinuteTelemetry,
+    formatClockTime,
+    onEvacuate: zone => {
+      state.from = { name: zone.shortName, coord: zone.coord };
+      fromMarker.setLngLat(zone.coord).addTo(map);
+      state.lastRouteKey = null;
+      update(false);
+      toast(`🚗 Routing safe evacuation: ${zone.shortName} → Masjid BBR (PPS)`);
+    },
+    onOpenAlert: () => {
+      const riskPanel = document.getElementById("riskSectionPanel");
+      const riskBtn = document.getElementById("riskAlertBtn");
+      if (riskPanel) { riskPanel.hidden = true; riskPanel.style.display = "none"; }
+      if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
+
+      closePredictModal();
+      closeReportModal();
+
+      if (map.getSource("fs-route")) map.getSource("fs-route").setData(emptyFC);
+      if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
+      if (map.getSource("fs-connector")) map.getSource("fs-connector").setData(emptyFC);
+      altRouteMarkers.forEach(m => m.remove());
+      altRouteMarkers = [];
+
+      toast("🚨 3-Hour Flood Alert: Review evacuation deadlines and spare departure time");
+    },
+    onCloseAlert: () => {
+      resetZoneFilters();
+      update(false);
+    }
+  });
 
   const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
   const dest = places.find(p => p.type === "relief_centre" || (p.name && p.name.includes("Masjid"))) || places[places.length - 1];
@@ -1877,8 +1915,8 @@ function update(fromTick) {
     T
   };
 
-  // Always render the primary safe route (line) so it is visible and dynamically updating (unless Predict is active)
-  if (state.predictActive) {
+  // Always render the primary safe route (line) so it is visible and dynamically updating (unless Predict or Alert is active)
+  if (state.predictActive || isEvacAlertOpen()) {
     if (map.getSource("fs-route")) map.getSource("fs-route").setData(emptyFC);
     if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
     if (map.getSource("fs-connector")) map.getSource("fs-connector").setData(emptyFC);
@@ -1994,6 +2032,7 @@ if (ui.predictBtn) {
 
       // Mutually close report modal if open
       closeReportModal();
+      closeEvacAlertPanel();
 
       // Reset to time selection mode whenever Predict button is opened
       state.predictTimeSelected = false;
@@ -2011,6 +2050,7 @@ if (ui.predictBtn) {
 const riskAlertBtnTop = document.getElementById("riskAlertBtn");
 if (riskAlertBtnTop) {
   riskAlertBtnTop.addEventListener("click", () => {
+    closeEvacAlertPanel();
     setTimeout(() => {
       const riskPanel = document.getElementById("riskSectionPanel");
       if (riskPanel && !riskPanel.hidden && riskPanel.style.display !== "none") {
@@ -2037,6 +2077,7 @@ if (ui.reportBtn) {
       }
       if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
       closePredictModal();
+      closeEvacAlertPanel();
 
       openReportModal();
       toast("📢 Citizen Report: Upload flood photo & report affected areas");
