@@ -148,53 +148,72 @@
       <button type="button" id="camTop" aria-pressed="false">Top</button>
     </div>
 
-    <!-- Flood Risk Alert & Area Sections Widget (Replaces bulky Sponge HUD) -->
+    <!-- Flood Risk Alert, Predict & Citizen Report Action Widget -->
     <div class="risk-section-widget" id="riskSectionWidget">
-      <!-- 1. Alert / Warning Sign Trigger Button -->
-      <button type="button" class="risk-alert-btn" id="riskAlertBtn" aria-label="Flood Risk Status & Area Sections" aria-expanded="false" title="Click to view Flood Risk Areas by section">
-        <span class="risk-alert-icon">⚠️</span>
-        <span class="risk-alert-text">Flood Risks</span>
-      </button>
+      <!-- 1. Right-side Floating Action Buttons Stack -->
+      <div class="top-action-buttons-stack" id="topActionButtonsStack">
+        <!-- Flood Risks Trigger Button -->
+        <button type="button" class="risk-alert-btn" id="riskAlertBtn" aria-label="Flood Risk Status & Area Sections" aria-expanded="false" title="Click to view Flood Risk Areas by section">
+          <span class="risk-alert-icon">⚠️</span>
+          <span class="risk-alert-text">Flood Risks</span>
+        </button>
 
-      <!-- 2. Predict Button (Directly under Flood Risks button) -->
-      <button type="button" class="predict-btn-main" id="predictBtn" aria-pressed="false" title="Toggle FloodShield Area Flood & Evacuation Prediction">
-        <span class="predict-btn-icon">🔮</span>
-        <span class="predict-btn-label">Predict</span>
-      </button>
+        <!-- Predict Button -->
+        <button type="button" class="predict-btn-main" id="predictBtn" aria-pressed="false" title="Toggle FloodShield Area Flood & Evacuation Prediction">
+          <span class="predict-btn-icon">🔮</span>
+          <span class="predict-btn-label">Predict</span>
+        </button>
 
-      <!-- Expandable Area Risk Sections Panel (for Flood Risks button) -->
-      <div class="risk-section-panel" id="riskSectionPanel" hidden>
-        <div class="risk-panel-header">
-          <div class="risk-panel-title">
-            <span class="risk-panel-icon">⚠️</span>
-            <strong>Area Flood Risk Sections</strong>
-          </div>
-          <button type="button" class="risk-panel-close" id="riskPanelClose" aria-label="Close risk sections">&times;</button>
-        </div>
-
-        <!-- Section Filter Buttons: All / Flooded / High Risk / Moderate / Safe -->
-        <div class="risk-filter-chips" role="group" aria-label="Filter areas by risk level">
-          <button type="button" class="risk-chip active" data-section="all" id="chipAll">All (<span id="countAll">18</span>)</button>
-          <button type="button" class="risk-chip chip-flooded" data-section="flooded" id="chipFlooded">🔴 Flooded (<span id="countFlooded">0</span>)</button>
-          <button type="button" class="risk-chip chip-high" data-section="high" id="chipHigh">🚨 High Risk (<span id="countHigh">0</span>)</button>
-          <button type="button" class="risk-chip chip-moderate" data-section="moderate" id="chipModerate">🟠 Moderate (<span id="countModerate">0</span>)</button>
-          <button type="button" class="risk-chip chip-safe" data-section="safe" id="chipSafe">🟢 Safe (<span id="countSafe">18</span>)</button>
-        </div>
-
-        <!-- Areas List for the Selected Section -->
-        <div class="risk-section-areas" id="riskSectionAreasList">
-          <!-- Dynamically populated with area cards according to each section -->
-        </div>
+        <!-- Citizen Flood Report Button (Directly under Predict) -->
+        <button type="button" class="report-btn-main" id="reportBtn" aria-pressed="false" title="Report Flood Incident with Photos">
+          <span class="report-btn-icon">📢</span>
+          <span class="report-btn-label">Report</span>
+        </button>
       </div>
 
-      <!-- Expandable Predict Forecast & Time Selection Panel (for Predict button) -->
-      <div class="predict-time-popup" id="predictTimePopup" hidden>
-        <div id="predictPanelSlot"></div>
+      <!-- 2. Side Action Panels Container (Opens NEXT TO the buttons on the left!) -->
+      <div class="side-action-panels-container" id="sideActionPanelsContainer">
+        <!-- Area Flood Risk Sections Panel -->
+        <div class="risk-section-panel" id="riskSectionPanel" hidden>
+          <div class="risk-panel-header">
+            <div class="risk-panel-title">
+              <span class="risk-panel-icon">⚠️</span>
+              <strong>Area Flood Risk Sections</strong>
+            </div>
+            <button type="button" class="risk-panel-close" id="riskPanelClose" aria-label="Close risk sections">&times;</button>
+          </div>
+
+          <!-- Section Filter Buttons: All / Flooded / High Risk / Moderate / Safe -->
+          <div class="risk-filter-chips" role="group" aria-label="Filter areas by risk level">
+            <button type="button" class="risk-chip active" data-section="all" id="chipAll">All (<span id="countAll">18</span>)</button>
+            <button type="button" class="risk-chip chip-flooded" data-section="flooded" id="chipFlooded">🔴 Flooded (<span id="countFlooded">0</span>)</button>
+            <button type="button" class="risk-chip chip-high" data-section="high" id="chipHigh">🚨 High Risk (<span id="countHigh">0</span>)</button>
+            <button type="button" class="risk-chip chip-moderate" data-section="moderate" id="chipModerate">🟠 Moderate (<span id="countModerate">0</span>)</button>
+            <button type="button" class="risk-chip chip-safe" data-section="safe" id="chipSafe">🟢 Safe (<span id="countSafe">18</span>)</button>
+          </div>
+
+          <!-- Areas List for the Selected Section -->
+          <div class="risk-section-areas" id="riskSectionAreasList">
+            <!-- Dynamically populated with area cards according to each section -->
+          </div>
+        </div>
+
+        <!-- Expandable Predict Forecast & Time Selection Panel -->
+        <div class="predict-time-popup" id="predictTimePopup" hidden>
+          <div id="predictPanelSlot"></div>
+        </div>
+
+        <!-- Citizen Flood Incident Report Modal -->
+        <div class="report-flood-modal" id="reportFloodModal" hidden>
+          <div id="reportModalSlot"></div>
+        </div>
       </div>
     </div>
 
-    <div class="toast" id="toast" role="status" aria-live="assertive"></div>
-
+    <div class="toast" id="toast" role="status" aria-live="assertive"></div>
+
+
+
     <!-- Bottom Right Corner: Legend Button & Popup -->
     <div class="legend-corner" id="legendCorner">
       <div class="legend-popup" id="legendPopup" hidden>

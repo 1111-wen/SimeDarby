@@ -1,3 +1,5 @@
+import { initCommunityReportMarkers, showCommunityReportOnMap, COMMUNITY_REPORTS } from "./community_reports.js";
+import { initReportModal, openReportModal, closeReportModal } from "./report_modal.js";
 // FloodSafe Route: main app. Wires the map, flood scenarios, routing and the UI together.
 import { CONFIG } from "./config.js";
 import { loadScenarios, pickScenario, level, fetchLiveFloodPrediction } from "./flood.js";
@@ -16,6 +18,7 @@ const ui = {
   spongeHudBar: $("spongeHudBar"), spongeStorageText: $("spongeStorageText"), spongeRainText: $("spongeRainText"),
   predictBtn: $("predictBtn"), predictTimePopup: $("predictTimePopup"),
   predictPanelSlot: $("predictPanelSlot"),
+  reportBtn: $("reportBtn"), reportFloodModal: $("reportFloodModal"), reportModalSlot: $("reportModalSlot"),
   areaScheduleContainer: $("areaScheduleContainer"),
   q4AreaScheduleSlot: $("q4AreaScheduleSlot"),
   topTimeBar: $("topTimeBar"), topTimeVal: $("topTimeVal"),
@@ -470,6 +473,16 @@ async function loadData() {
 
   // Initialize Risk Section Alert button & expandable filter controls
   initRiskSectionControls();
+
+  // Initialize Crowd-sourced Citizen Flood Reporting markers & modal
+  initCommunityReportMarkers(map, (zoneId) => {
+    openReportModal(zoneId);
+  });
+  if (ui.reportModalSlot) {
+    initReportModal(ui.reportModalSlot, (zoneId, record) => {
+      toast(`📢 Report Added: (${record.count} people reported) in this area!`);
+    });
+  }
 
   const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
   const dest = places.find(p => p.type === "relief_centre" || (p.name && p.name.includes("Masjid"))) || places[places.length - 1];
@@ -1949,6 +1962,9 @@ if (ui.predictBtn) {
       }
       if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
 
+      // Mutually close report modal if open
+      closeReportModal();
+
       // Reset to time selection mode whenever Predict button is opened
       state.predictTimeSelected = false;
       state.predictCategoryFilter = "all";
@@ -1956,6 +1972,32 @@ if (ui.predictBtn) {
       toast("🔮 Forecast: Select a time window to preview area flood conditions");
     } else {
       closePredictModal();
+    }
+  });
+}
+
+// Report Button & Citizen Incident Reporting (Directly under Predict)
+if (ui.reportBtn) {
+  ui.reportBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isHidden = !ui.reportFloodModal || ui.reportFloodModal.hidden || ui.reportFloodModal.style.display === "none";
+    if (isHidden) {
+      // Mutually close risk section panel if open
+      const riskPanel = document.getElementById("riskSectionPanel");
+      const riskBtn = document.getElementById("riskAlertBtn");
+      if (riskPanel) {
+        riskPanel.hidden = true;
+        riskPanel.style.display = "none";
+      }
+      if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
+      closePredictModal();
+
+      ui.reportBtn.setAttribute("aria-pressed", "true");
+      openReportModal();
+      toast("📢 Citizen Report: Upload flood photo & report affected areas");
+    } else {
+      closeReportModal();
     }
   });
 }

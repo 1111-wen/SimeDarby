@@ -1,3 +1,4 @@
+import { COMMUNITY_REPORTS } from "./community_reports.js";
 /**
  * FloodShield — Hydraulic Inundation & Time-Critical Evacuation Prioritisation Engine
  * 
@@ -1214,6 +1215,18 @@ function buildPopupHtml(zone, data) {
       <h4 class="emerg-popup-title" style="margin:4px 0 0; font-size:13.5px; color:#0f172a; font-weight:800;">${zone.name}</h4>
     </div>
     <div class="emerg-popup-body" style="padding:10px 12px; font-size:12px; line-height:1.45;">
+      ${(() => {
+        const comm = (typeof COMMUNITY_REPORTS !== "undefined" && COMMUNITY_REPORTS[zone.id]) ? COMMUNITY_REPORTS[zone.id] : null;
+        if (comm && comm.count > 0) {
+          return `
+            <div style="margin-bottom:6px; background:#fff1f2; border:1px solid #fecdd3; padding:5px 8px; border-radius:8px; color:#9f1239; font-weight:700; font-size:11px; display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">📢</span>
+              <span>(${comm.count} people reported this area is flooded)</span>
+            </div>
+          `;
+        }
+        return '';
+      })()}
       <div style="margin-bottom:4px;"><strong>📍 Corridor:</strong> ${zone.corridor}</div>
       <div style="margin-bottom:4px;"><strong>⏱️ Timing:</strong> ${timeText}</div>
       <div style="margin-bottom:4px;"><strong>🌊 Depth:</strong> ${depthText}</div>
@@ -1614,6 +1627,13 @@ export function initRiskSectionControls() {
       predictPopup.style.display = "none";
     }
     if (predictBtn) predictBtn.setAttribute("aria-pressed", "false");
+    const reportModal = document.getElementById("reportFloodModal");
+    const reportBtn = document.getElementById("reportBtn");
+    if (reportModal) {
+      reportModal.hidden = true;
+      reportModal.style.display = "none";
+    }
+    if (reportBtn) reportBtn.setAttribute("aria-pressed", "false");
     renderRiskSectionWidget(currentSchedule, currentSectionFilter);
   };
 
