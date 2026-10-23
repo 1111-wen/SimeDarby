@@ -292,33 +292,7 @@ export function computeAreaFloodSchedule(currentWl, predWl, currentTimestampStr 
  * Generate formatted HTML for the full FloodShield Evacuation & Predict Panel
  */
 export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentTimestampStr) {
-  // Find Area A (Jalan Makyong) and Area B (Taman Kyra/Casira)
-  const areaA = scheduleList.find(z => z.id === "zone-makyong-dip") || scheduleList[0];
-  const areaB = scheduleList.find(z => z.id === "zone-kyra-casira") || scheduleList[1];
-
-  // Format Area A evacuation metrics
-  const areaAFillMin = areaA.status === "CURRENT_FLOOD" ? 0 : Math.max(10, areaA.timeUntilFloodMin || 30);
-  const areaASpare = Math.max(0, areaAFillMin - areaA.evacTimeMin);
-  const areaASpareText = areaA.status === "CURRENT_FLOOD"
-    ? "<span style='color:#ff8a80; font-weight:800;'>0 minutes (SUBMERGED!)</span>"
-    : `only <strong>${areaASpare} minutes</strong> of spare time.`;
-
-  // Format Area B evacuation metrics
-  const areaBFillMin = areaB.status === "CURRENT_FLOOD" ? 0 : Math.max(45, areaB.timeUntilFloodMin || 90);
-  const areaBSpare = Math.max(0, areaBFillMin - areaB.evacTimeMin);
-  const areaBSpareText = `<strong>${areaBSpare} minutes</strong> of spare time.`;
-
-  // Dynamic Comparison Banner text
-  let bannerText = "";
-  if (areaA.status === "CURRENT_FLOOD") {
-    bannerText = "AREA A ESCAPE ROUTE IS CURRENTLY SUBMERGED. RESIDENTS MUST USE THE ELEVATED EMERGENCY BYPASS TO MASJID BBR.";
-  } else if (areaASpare < areaBSpare) {
-    bannerText = "AREA A NEEDS TO ACT MUCH SOONER BECAUSE ITS ESCAPE ROUTE COULD BECOME UNSAFE EARLIER.";
-  } else {
-    bannerText = "EVACUATION WINDOWS MONITORED: ALL ESCAPE ROUTES CURRENTLY PASSABLE.";
-  }
-
-  // Cards for all other areas
+  // Cards for all areas
   const cardsHtml = scheduleList.map(item => {
     const isDanger = item.status === "CURRENT_FLOOD" || item.status === "PREDICTED_FLOOD";
     const isWarning = item.status === "WARNING";
@@ -356,65 +330,15 @@ export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentT
         <div class="modal-head-title">
           <span class="modal-head-icon">🔮</span>
           <div>
-            <h2 style="margin:0; font-size:16px; color:var(--ink);">FloodShield: Time-Critical Evacuation Prioritisation</h2>
+            <h2 style="margin:0; font-size:16px; color:var(--ink);">FloodShield: Area Inundation & Evacuation Schedule</h2>
             <p class="modal-head-sub" style="margin:2px 0 0; font-size:11.5px; color:var(--muted);">Sg. Binjai Level: <strong>${Number(currentWl).toFixed(2)}m</strong> &bull; Forecast (t+3h): <strong>${Number(predWl).toFixed(2)}m</strong> &bull; Scrubber Time: <strong>${currentTimestampStr}</strong></p>
           </div>
         </div>
         <button type="button" class="floodshield-close-btn" id="predictCloseBtn" aria-label="Close prediction">&times;</button>
       </div>
 
-      <!-- Core Philosophy Statement Callout -->
-      <div class="floodshield-quote-box">
-        <p>
-          "Our system goes beyond visualising floodwater and identifying routes that are safe at the present moment. 
-          It estimates when critical access roads may become unsafe and compares this with the time required for residents to evacuate. 
-          By identifying residential blocks with the smallest remaining evacuation windows, <strong>FloodShield can prioritise time-critical warnings</strong> 
-          and recommend alternative routes before neighbourhoods risk becoming isolated."
-        </p>
-      </div>
-
-      <!-- 2x2 Evacuation Urgency Comparison Graphic (Matching User Presentation Slide) -->
-      <div class="evac-comparison-container">
-        <!-- Area A Box (Top-Left) -->
-        <div class="evac-card-box evac-box-area-a">
-          <div class="evac-box-title">🏠 Area A (${areaA.shortName})</div>
-          <ul class="evac-box-list">
-            <li>The road may flood in <strong>${areaAFillMin} minutes</strong>.</li>
-            <li>Residents need <strong>${areaA.evacTimeMin} minutes</strong> to evacuate.</li>
-            <li>They have ${areaASpareText}</li>
-          </ul>
-          <div class="evac-box-urgency urgency-danger">High urgency — warn residents first.</div>
-        </div>
-
-        <!-- Comparison Stamp (Top-Right) -->
-        <div class="evac-card-box evac-box-banner-top">
-          <div class="evac-banner-stamp">COMPARISON</div>
-        </div>
-
-        <!-- Key Decision Callout Banner (Bottom-Left) -->
-        <div class="evac-card-box evac-box-banner-bot">
-          <div class="evac-banner-headline">${bannerText}</div>
-        </div>
-
-        <!-- Area B Box (Bottom-Right) -->
-        <div class="evac-card-box evac-box-area-b">
-          <div class="evac-box-title">🏠 Area B (${areaB.shortName})</div>
-          <ul class="evac-box-list">
-            <li>The road may flood in <strong>${areaBFillMin} minutes</strong>.</li>
-            <li>Residents need <strong>${areaB.evacTimeMin} minutes</strong> to evacuate.</li>
-            <li>They have ${areaBSpareText}</li>
-          </ul>
-          <div class="evac-box-urgency urgency-safe">Lower urgency — more time to prepare.</div>
-        </div>
-      </div>
-
-      <!-- Catchment Ground Elevation & Hydrology Details -->
-      <div class="floodshield-dem-note">
-        <span>📐 <strong>Topographic Elevation Model (DEM):</strong> Flooding occurs when Sg. Binjai water level exceeds the local ground elevation ($H_{\\text{river}} \\ge Z_{\\text{elev}}$). Road depth $d = \\max(0, H - Z_{\\text{elev}})$.</span>
-      </div>
-
       <!-- Detailed All-Area Inundation Schedule List -->
-      <div class="area-schedule-cards" style="max-height: 200px; margin-top:6px;">
+      <div class="area-schedule-cards" style="max-height: 480px; margin-top:8px;">
         ${cardsHtml}
       </div>
     </div>
