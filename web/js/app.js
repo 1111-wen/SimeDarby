@@ -59,7 +59,7 @@ const state = {
 };
 
 let emergMarkers = [];
-let activeEmergFilter = "all";
+let activeEmergFilter = "none";
 
 const VERIFIED_EMERGENCY_FACILITIES = [
   { name: "Masjid Bandar Bukit Raja (relief centre)", shortName: "Masjid BBR (PPS)", coord: [101.42946, 3.08999], type: "relief_centre", category: "shelter", icon: "🏢", verified: true, address: "Jalan Makyong 5E/KU5, Bandar Bukit Raja, 41050 Klang", desc: "Verified Official PPS Relief Shelter (APM / NADMA)" },
@@ -287,6 +287,7 @@ function renderEmergencyMarkers() {
     el.className = `emerg-marker cat-${pCat}`;
     el.dataset.category = pCat;
     el.dataset.name = p.name;
+    el.style.display = "none"; // Hidden by default until an emergency button is clicked
 
     const container = document.createElement("div");
     container.className = "emerg-marker-container";
@@ -353,8 +354,9 @@ function renderEmergencyMarkers() {
 }
 
 function filterEmergencyFacilities(cat) {
-  if (activeEmergFilter === cat && cat !== "all") {
-    cat = "all";
+  // If user clicks the currently active emergency chip, toggle it OFF (none)
+  if (activeEmergFilter === cat) {
+    cat = "none";
   }
   activeEmergFilter = cat;
   document.querySelectorAll(".emerg-chip").forEach(chip => {
@@ -366,7 +368,7 @@ function filterEmergencyFacilities(cat) {
     const pCat = getPlaceCategory(place);
     const isMatch = (cat === "all" || pCat === cat);
 
-    if (isMatch) {
+    if (cat !== "none" && isMatch) {
       element.style.display = "";
       element.classList.remove("dimmed");
       if (cat === "all") {
@@ -380,7 +382,7 @@ function filterEmergencyFacilities(cat) {
       element.classList.add("dimmed");
       element.classList.remove("highlighted");
       const popup = marker.getPopup();
-      if (popup && popup.isOpen()) {
+      if (popup && popup.isOpen && popup.isOpen()) {
         popup.remove();
       }
     }
@@ -451,8 +453,9 @@ async function loadData() {
         ? "<strong>Data.</strong> Roads, buildings, water bodies and drains come from OpenStreetMap. Places and emergency facilities come from public sources. The river-level model is trained on real JPS Public Infobanjir records (Oct–Dec 2024). Road flood depths and the river readings in the Predict timeline are simulated for this prototype, based on reported floods in Taman Kyra, Taman Casira and Jalan Makyong. They are not live or official forecasts."
         : "<strong>Data.</strong> Roads, buildings, water bodies and drains come from OpenStreetMap. Flood predictions come from pre-computed HEC-RAS scenarios. See DATA_SOURCES.md for every source and assumption.";
 
-  // Render emergency markers on the map
+  // Render emergency markers on the map (hidden by default)
   renderEmergencyMarkers();
+  filterEmergencyFacilities("none");
 
   // Initialize Inundation Vulnerability Zone markers (matching shelter/bomba/hospital pin & popup)
   initInundationMarkers(map, zone => {
