@@ -980,27 +980,58 @@ export function renderPredictPanelHtml(
   currentTimestampStr,
   activeLeadMin = 0,
   baseTimestampStr = currentTimestampStr,
-  activeCategory = "all"
+  activeCategory = "all",
+  timeSelected = false
 ) {
+  const leadOffsets = [0, 30, 60, 90, 120];
+
+  // STEP 1: When user clicks Predict button (timeSelected === false), ONLY show the time window selector!
+  if (!timeSelected) {
+    const timeChipsHtml = leadOffsets.map(mins => {
+      const formattedTime = formatForecastOffsetTime(baseTimestampStr, mins);
+      const label = mins === 0 ? `${formattedTime} (Current)` : formattedTime;
+      return `
+        <button type="button" class="time-chip" data-lead="${mins}" title="Select ${formattedTime} to preview area flood conditions">
+          <span>${label}</span>
+        </button>
+      `;
+    }).join("");
+
+    return `
+      <div class="floodshield-modal-content">
+        <!-- Modal Header -->
+        <div class="risk-panel-header" style="margin-bottom:8px;">
+          <div class="risk-panel-title">
+            <span class="risk-panel-icon">🔮</span>
+            <div>
+              <strong>Area Flood Inundation Prediction</strong>
+              <small style="display:block; font-size:11px; color:var(--muted); font-weight:normal;">Sg. Binjai: <strong>${Number(currentWl).toFixed(2)}m</strong> &bull; Select a time window</small>
+            </div>
+          </div>
+          <button type="button" class="risk-panel-close" id="predictCloseBtn" aria-label="Close prediction">&times;</button>
+        </div>
+
+        <!-- ⏱️ Select Forecast Time Window: ONLY -->
+        <div class="predict-time-section">
+          <div class="predict-time-header">
+            <span>⏱️</span>
+            <span>Select Forecast Time Window:</span>
+          </div>
+          <div class="forecast-chips-grid">
+            ${timeChipsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // STEP 2: When user clicked a time (timeSelected === true):
+  // Show category filter chips & area cards. Do NOT show the ⏱️ Select Forecast Time Window: box!
   const floodedCount = scheduleList.filter(z => z.status === "CURRENT_FLOOD").length;
   const highRiskCount = scheduleList.filter(z => z.status === "PREDICTED_FLOOD").length;
   const modCount = scheduleList.filter(z => z.status === "WARNING").length;
   const safeCount = scheduleList.filter(z => z.status === "SAFE").length;
 
-  const leadOffsets = [0, 30, 60, 90, 120];
-
-  const timeChipsHtml = leadOffsets.map(mins => {
-    const formattedTime = formatForecastOffsetTime(baseTimestampStr, mins);
-    const isActive = activeLeadMin === mins;
-    const label = mins === 0 ? `${formattedTime} (Current)` : formattedTime;
-    return `
-      <button type="button" class="time-chip ${isActive ? 'active' : ''}" data-lead="${mins}" title="Preview area flood condition at ${formattedTime}">
-        <span>${label}</span>
-      </button>
-    `;
-  }).join("");
-
-  // Category Filter Chips under the time selection (matches Flood Risk Sections aesthetic)
   const catChipsHtml = `
     <div class="risk-filter-chips predict-cat-chips" role="group" aria-label="Filter areas by risk status">
       <button type="button" class="risk-chip ${activeCategory === 'all' ? 'active' : ''}" data-cat="all">All (${scheduleList.length})</button>
@@ -1066,34 +1097,28 @@ export function renderPredictPanelHtml(
 
   return `
     <div class="floodshield-modal-content">
-      <!-- Modal Header -->
-      <div class="risk-panel-header" style="margin-bottom:4px;">
+      <!-- Modal Header with Forecast Time & Change Time Button -->
+      <div class="risk-panel-header" style="margin-bottom:8px;">
         <div class="risk-panel-title">
           <span class="risk-panel-icon">🔮</span>
           <div>
-            <strong>Area Flood Inundation Prediction</strong>
-            <small style="display:block; font-size:11px; color:var(--muted); font-weight:normal;">Sg. Binjai: <strong>${Number(currentWl).toFixed(2)}m</strong> &bull; Forecast: <strong>${currentTimestampStr}</strong></small>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <strong style="font-size:13px;">Forecast: ${currentTimestampStr}</strong>
+              <button type="button" class="predict-change-time-btn" id="predictChangeTimeBtn" title="Select a different forecast time window">
+                ⏱️ Change Time
+              </button>
+            </div>
+            <small style="display:block; font-size:11px; color:var(--muted); font-weight:normal;">Sg. Binjai: <strong>${Number(currentWl).toFixed(2)}m</strong> &rarr; Pred: <strong>${Number(predWl).toFixed(2)}m</strong></small>
           </div>
         </div>
         <button type="button" class="risk-panel-close" id="predictCloseBtn" aria-label="Close prediction">&times;</button>
       </div>
 
-      <!-- 1. Forecast Time Selection -->
-      <div class="predict-time-section">
-        <div class="predict-time-header">
-          <span>⏱️</span>
-          <span>Select Forecast Time Window:</span>
-        </div>
-        <div class="forecast-chips-grid">
-          ${timeChipsHtml}
-        </div>
-      </div>
-
-      <!-- 2. Risk Category Filter Chips (Under Forecast Time Selection) -->
+      <!-- Category Filter Chips (Directly under Header) -->
       ${catChipsHtml}
 
-      <!-- 3. Detailed All-Area Inundation Conditions List -->
-      <div class="area-schedule-cards" style="max-height: 44vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-top:2px;">
+      <!-- Detailed All-Area Inundation Conditions List -->
+      <div class="area-schedule-cards" style="max-height: 48vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-top:4px;">
         ${cardsContent}
       </div>
     </div>

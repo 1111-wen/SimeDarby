@@ -47,7 +47,7 @@ const state = {
   mode: CONFIG.defaultMode,
   graph: null, roads: null, places: [], scenarios: [], scenario: null,
   t: 0, hasRain: false, from: null, to: null, lastRouteKey: null, lastEdges: [], lastNames: new Map(),
-  watchId: null, storm: null, predictActive: false, selectedForecastMin: 0, altRoutes: [],
+  watchId: null, storm: null, predictActive: false, predictTimeSelected: false, selectedForecastMin: 0, altRoutes: [],
   primaryRouteLine: null, primaryAnchorCoord: null, primaryRouteData: null,
   forecastShifted: false,
   timelineMode: "q4_2024",
@@ -1103,9 +1103,28 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
   const schedule = computeAreaFloodSchedule(currentWl, predWl, timeLabel);
 
   if (ui.predictPanelSlot) {
-    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel, activeLeadMin, baseTimeStr, activeCategory);
+    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(
+      schedule,
+      currentWl,
+      predWl,
+      timeLabel,
+      activeLeadMin,
+      baseTimeStr,
+      activeCategory,
+      state.predictTimeSelected
+    );
+
     const closeBtn = document.getElementById("predictCloseBtn");
     if (closeBtn) closeBtn.onclick = () => closePredictModal();
+
+    const changeTimeBtn = document.getElementById("predictChangeTimeBtn");
+    if (changeTimeBtn) {
+      changeTimeBtn.onclick = () => {
+        state.predictTimeSelected = false;
+        resetZoneFilters();
+        updatePredictModalView(state.selectedForecastLeadMin, "all");
+      };
+    }
 
     // Bind forecast time chip clicks
     ui.predictPanelSlot.querySelectorAll(".time-chip").forEach(chip => {
@@ -1113,6 +1132,7 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
         e.preventDefault();
         e.stopPropagation();
         const lead = parseInt(chip.dataset.lead, 10);
+        state.predictTimeSelected = true;
         updatePredictModalView(lead, state.predictCategoryFilter);
       });
     });
@@ -1135,12 +1155,17 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
     bindAreaCardClicks(ui.q4AreaScheduleSlot);
   }
 
-  // Update map markers, badges, and polygons according to activeCategory
-  updateInundationMarkers(schedule, activeCategory);
+  // Update map markers, badges, and polygons according to activeCategory only when a forecast time is selected
+  if (state.predictActive && state.predictTimeSelected) {
+    updateInundationMarkers(schedule, activeCategory);
+  } else {
+    resetZoneFilters();
+  }
 }
 
 function closePredictModal() {
   state.predictActive = false;
+  state.predictTimeSelected = false;
   state.predictCategoryFilter = "all";
   if (ui.predictBtn) ui.predictBtn.setAttribute("aria-pressed", "false");
   if (ui.predictTimePopup) {
@@ -1924,8 +1949,13 @@ if (ui.predictBtn) {
       }
       if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
 
-      updatePredictModalView();
+      // Reset to time selection mode whenever Predict button is opened
+      state.predictTimeSelected = false;
+      state.predictCategoryFilter = "all";
+      updatePredictModalView(0, "all");
       toast("🔮 Forecast: Select a time window to preview area flood conditions");
+    } else {
+      closePredictModal();
     }
   });
 }
