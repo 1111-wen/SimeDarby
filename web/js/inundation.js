@@ -11,165 +11,742 @@
 
 export const VULNERABILITY_ZONES = [
   {
-    id: "zone-klang-utama",
-    code: "Klang Utama",
-    name: "Taman Klang Utama Lowland Residential Suburb",
-    shortName: "Taman Klang Utama",
-    category: "residential",
-    coord: [101.4155, 3.0845],
-    polygon: [
-      [101.4080, 3.0910],
-      [101.4230, 3.0910],
-      [101.4230, 3.0780],
-      [101.4080, 3.0780],
-      [101.4080, 3.0910]
+    "id": "zone-klang-utama",
+    "code": "Klang Utama",
+    "name": "Taman Klang Utama Lowland Residential Suburb",
+    "shortName": "Taman Klang Utama",
+    "category": "residential",
+    "coord": [
+      101.4155,
+      3.0845
     ],
-    groundElevationM: 3.90,
-    riverFloodThresholdM: 4.25,
-    crestSubmergenceCm: 55,
-    evacTimeMin: 20,
-    icon: "🏡",
-    corridor: "Persiaran Sungai Keramat & Sg. Puloh catchment",
-    safeBypass: "Elevated Persiaran Bukit Raja connector direct to Masjid BBR (PPS)",
-    desc: "Major residential suburb west of BBR. Backwater locks when Sg. Puloh / Sg. Binjai water levels rise."
+    "polygon": [
+      [
+        101.408,
+        3.091
+      ],
+      [
+        101.423,
+        3.091
+      ],
+      [
+        101.423,
+        3.078
+      ],
+      [
+        101.408,
+        3.078
+      ],
+      [
+        101.408,
+        3.091
+      ]
+    ],
+    "groundElevationM": 3.9,
+    "riverFloodThresholdM": 4.25,
+    "crestSubmergenceCm": 55,
+    "evacTimeMin": 20,
+    "icon": "\ud83c\udfe1",
+    "corridor": "Persiaran Sungai Keramat & Sg. Puloh catchment",
+    "safeBypass": "Elevated Persiaran Bukit Raja connector direct to Masjid BBR (PPS)",
+    "desc": "Major residential suburb west of BBR. Backwater locks when Sg. Puloh / Sg. Binjai water levels rise."
   },
   {
-    id: "zone-makyong-dip",
-    code: "Area A",
-    name: "Jalan Makyong 5A/5B Residential Dips (BBR North)",
-    shortName: "Jalan Makyong (Area A)",
-    category: "residential",
-    coord: [101.4285, 3.0888],
-    polygon: [
-      [101.4240, 3.0915],
-      [101.4335, 3.0915],
-      [101.4335, 3.0860],
-      [101.4240, 3.0860],
-      [101.4240, 3.0915]
+    "id": "zone-batu3-pinang",
+    "code": "Batu 3",
+    "name": "Kampung Batu 3 & Sg. Pinang Coastal Plain",
+    "shortName": "Kampung Batu 3",
+    "category": "residential",
+    "coord": [
+      101.428,
+      3.075
     ],
-    groundElevationM: 4.20,
-    riverFloodThresholdM: 4.40,
-    crestSubmergenceCm: 45,
-    evacTimeMin: 20,
-    icon: "🏠",
-    corridor: "Jalan Makyong 5A, 5B, 6 & Sg. Puloh culvert intake",
-    safeBypass: "Elevated connector road direct to Masjid BBR (PPS)",
-    desc: "Natural topographic bowl. Traps surface runoff when Sg. Puloh culverts are backwater-pressured."
+    "polygon": [
+      [
+        101.422,
+        3.082
+      ],
+      [
+        101.436,
+        3.082
+      ],
+      [
+        101.436,
+        3.069
+      ],
+      [
+        101.422,
+        3.069
+      ],
+      [
+        101.422,
+        3.082
+      ]
+    ],
+    "groundElevationM": 3.6,
+    "riverFloodThresholdM": 4.2,
+    "crestSubmergenceCm": 65,
+    "evacTimeMin": 22,
+    "icon": "\ud83c\udfd8\ufe0f",
+    "corridor": "Jalan Batu 3 & Sg. Pinang tributary corridor",
+    "safeBypass": "Elevated Shapadu Flyover Link toward BBR safe spine",
+    "desc": "Low coastal village zone south of BBR. Prone to compound tidal and tributary surge."
   },
   {
-    id: "zone-kyra-casira",
-    code: "Area B",
-    name: "Taman Kyra & Casira Residential Blocks (BBR West)",
-    shortName: "Taman Kyra (Area B)",
-    category: "residential",
-    coord: [101.41287, 3.10591],
-    polygon: [
-      [101.4075, 3.1085],
-      [101.4180, 3.1085],
-      [101.4180, 3.0990],
-      [101.4075, 3.0990],
-      [101.4075, 3.1085]
+    "id": "zone-batu-belah",
+    "code": "Batu Belah",
+    "name": "Batu Belah Residential & Commercial Pocket",
+    "shortName": "Batu Belah",
+    "category": "residential",
+    "coord": [
+      101.439,
+      3.071
     ],
-    groundElevationM: 4.60,
-    riverFloodThresholdM: 4.75,
-    crestSubmergenceCm: 30,
-    evacTimeMin: 20,
-    icon: "🏠",
-    corridor: "Persiaran Bukit Raja West & Casira loop",
-    safeBypass: "Persiaran Bukit Raja 1 elevated link toward Columbia Asia bypass",
-    desc: "Higher elevation residential block (>4.6m). Retains longer escape window before runoff peaks."
+    "polygon": [
+      [
+        101.434,
+        3.0775
+      ],
+      [
+        101.4465,
+        3.0775
+      ],
+      [
+        101.4465,
+        3.064
+      ],
+      [
+        101.434,
+        3.064
+      ],
+      [
+        101.434,
+        3.0775
+      ]
+    ],
+    "groundElevationM": 4.1,
+    "riverFloodThresholdM": 4.45,
+    "crestSubmergenceCm": 40,
+    "evacTimeMin": 18,
+    "icon": "\ud83c\udfe0",
+    "corridor": "Jalan Batu Belah & E30 Shapadu Highway underpass",
+    "safeBypass": "Federal Highway elevated bypass toward Shah Alam / Klang High Ground",
+    "desc": "Dense neighbourhood adjacent to Shapadu Highway. Storm drains bottleneck during high river discharge."
   },
   {
-    id: "zone-meru-riverbank",
-    code: "Pekan Meru",
-    name: "Pekan Meru Low-Lying Riverbank & Market Dip",
-    shortName: "Pekan Meru Riverbank",
-    category: "commercial",
-    coord: [101.4385, 3.1365],
-    polygon: [
-      [101.4320, 3.1420],
-      [101.4440, 3.1420],
-      [101.4440, 3.1310],
-      [101.4320, 3.1310],
-      [101.4320, 3.1420]
+    "id": "zone-bbk-columbia",
+    "code": "BBK",
+    "name": "Bandar Baru Klang & Columbia Asia Medical Corridor",
+    "shortName": "Bandar Baru Klang",
+    "category": "arterial",
+    "coord": [
+      101.455,
+      3.069
     ],
-    groundElevationM: 3.80,
-    riverFloodThresholdM: 4.20,
-    crestSubmergenceCm: 60,
-    evacTimeMin: 25,
-    icon: "🏛️",
-    corridor: "Jalan Meru low market dip & Sg. Binjai riverbank",
-    safeBypass: "Persiaran Bukit Raja 1 / Jalan Haji Abdul Manan",
-    desc: "Lowest river corridor (3.8m). First to experience storm drain backwater locking and overtopping."
+    "polygon": [
+      [
+        101.4465,
+        3.076
+      ],
+      [
+        101.464,
+        3.076
+      ],
+      [
+        101.464,
+        3.062
+      ],
+      [
+        101.4465,
+        3.062
+      ],
+      [
+        101.4465,
+        3.076
+      ]
+    ],
+    "groundElevationM": 4.8,
+    "riverFloodThresholdM": 4.85,
+    "crestSubmergenceCm": 30,
+    "evacTimeMin": 15,
+    "icon": "\ud83c\udfe5",
+    "corridor": "Persiaran Bukit Raja 1 & Columbia Asia access artery",
+    "safeBypass": "Federal Highway elevated interchange & KPJ / Columbia medical corridor",
+    "desc": "Commercial & medical district. Critical ambulance and evacuation arterial route."
   },
   {
-    id: "zone-meru-junction",
-    code: "Jalan Meru",
-    name: "Jalan Meru Commercial Junction & BBR Gateway",
-    shortName: "Jalan Meru Junction",
-    category: "arterial",
-    coord: [101.4395, 3.0970],
-    polygon: [
-      [101.4335, 3.1020],
-      [101.4445, 3.1020],
-      [101.4445, 3.0930],
-      [101.4335, 3.0930],
-      [101.4335, 3.1020]
+    "id": "zone-makyong-dip",
+    "code": "Area A",
+    "name": "Jalan Makyong 5A/5B Residential Dips (BBR North)",
+    "shortName": "Jalan Makyong (Area A)",
+    "category": "residential",
+    "coord": [
+      101.4285,
+      3.0888
     ],
-    groundElevationM: 4.40,
-    riverFloodThresholdM: 4.50,
-    crestSubmergenceCm: 50,
-    evacTimeMin: 15,
-    icon: "🏢",
-    corridor: "Persiaran Klang / Jalan Meru main gateway junction",
-    safeBypass: "NKVE Highway elevated slip road & Persiaran Mokhtar Dahari",
-    desc: "Major arterial junction. Severely submerged when Sg. Binjai crosses 4.50m (Danger)."
+    "polygon": [
+      [
+        101.4235,
+        3.092
+      ],
+      [
+        101.434,
+        3.092
+      ],
+      [
+        101.434,
+        3.0855
+      ],
+      [
+        101.4235,
+        3.0855
+      ],
+      [
+        101.4235,
+        3.092
+      ]
+    ],
+    "groundElevationM": 4.2,
+    "riverFloodThresholdM": 4.4,
+    "crestSubmergenceCm": 45,
+    "evacTimeMin": 20,
+    "icon": "\ud83c\udfe0",
+    "corridor": "Jalan Makyong 5A, 5B, 6 & Sg. Puloh culvert intake",
+    "safeBypass": "Elevated connector road direct to Masjid BBR (PPS)",
+    "desc": "Natural topographic bowl. Traps surface runoff when Sg. Puloh culverts are backwater-pressured."
   },
   {
-    id: "zone-wetland-perimeter",
-    code: "Wetland Lake",
-    name: "Bandar Bukit Raja Wetland Lake Perimeter",
-    shortName: "BBR Wetland Park",
-    category: "sponge",
-    coord: [101.41954, 3.09790],
-    polygon: [
-      [101.4160, 3.1005],
-      [101.4255, 3.0995],
-      [101.4255, 3.0925],
-      [101.4160, 3.0935],
-      [101.4160, 3.1005]
+    "id": "zone-bbr-industrial",
+    "code": "BBR Industrial",
+    "name": "Bandar Bukit Raja Gateway Industrial Hub",
+    "shortName": "BBR Industrial Hub",
+    "category": "commercial",
+    "coord": [
+      101.427,
+      3.104
     ],
-    groundElevationM: 4.10,
-    riverFloodThresholdM: 4.30,
-    crestSubmergenceCm: 35,
-    evacTimeMin: 15,
-    icon: "🏞️",
-    corridor: "125-acre wetland retention lake edge & jogging boardwalks",
-    safeBypass: "Upper perimeter bund and elevated town park boardwalk",
-    desc: "Active blue-green sponge retention lake absorbing up to 100% capacity."
+    "polygon": [
+      [
+        101.418,
+        3.111
+      ],
+      [
+        101.433,
+        3.111
+      ],
+      [
+        101.433,
+        3.099
+      ],
+      [
+        101.418,
+        3.099
+      ],
+      [
+        101.418,
+        3.111
+      ]
+    ],
+    "groundElevationM": 4.5,
+    "riverFloodThresholdM": 4.7,
+    "crestSubmergenceCm": 35,
+    "evacTimeMin": 16,
+    "icon": "\ud83c\udfed",
+    "corridor": "Jalan BBR Industrial 1 & Sime Darby Logistics Park",
+    "safeBypass": "Persiaran Bukit Raja northbound bypass to WCE Highway",
+    "desc": "High-value logistics and industrial zone engineered with SUDS retention basins."
   },
   {
-    id: "zone-safe-highground",
-    code: "Masjid BBR",
-    name: "Persiaran Bukit Raja Spine & Masjid BBR (PPS)",
-    shortName: "Masjid BBR (Safe High Ground)",
-    category: "safe",
-    coord: [101.42946, 3.08999],
-    polygon: [
-      [101.4270, 3.0910],
-      [101.4320, 3.0910],
-      [101.4320, 3.0888],
-      [101.4270, 3.0888],
-      [101.4270, 3.0910]
+    "id": "zone-kyra-casira",
+    "code": "Area B",
+    "name": "Taman Kyra & Casira Residential Blocks (BBR West)",
+    "shortName": "Taman Kyra (Area B)",
+    "category": "residential",
+    "coord": [
+      101.41287,
+      3.10591
     ],
-    groundElevationM: 5.60,
-    riverFloodThresholdM: 6.20,
-    crestSubmergenceCm: 0,
-    evacTimeMin: 0,
-    icon: "🛡️",
-    corridor: "High-Elevation Evacuation Spine (>5.5m DEM)",
-    safeBypass: "Primary designated relief corridor to official APM / NADMA relief centre",
-    desc: "Elevated ridge immune to river overflow. Designated refuge zone."
+    "polygon": [
+      [
+        101.4075,
+        3.112
+      ],
+      [
+        101.418,
+        3.112
+      ],
+      [
+        101.418,
+        3.099
+      ],
+      [
+        101.4075,
+        3.099
+      ],
+      [
+        101.4075,
+        3.112
+      ]
+    ],
+    "groundElevationM": 4.6,
+    "riverFloodThresholdM": 4.75,
+    "crestSubmergenceCm": 30,
+    "evacTimeMin": 20,
+    "icon": "\ud83c\udfe0",
+    "corridor": "Persiaran Bukit Raja West & Casira loop",
+    "safeBypass": "Persiaran Bukit Raja 1 elevated link toward Columbia Asia bypass",
+    "desc": "Higher elevation residential block (>4.6m). Retains longer escape window before runoff peaks."
+  },
+  {
+    "id": "zone-wetland-perimeter",
+    "code": "Wetland Lake",
+    "name": "Bandar Bukit Raja Wetland Lake & Central Park",
+    "shortName": "BBR Wetland Park",
+    "category": "sponge",
+    "coord": [
+      101.41954,
+      3.0979
+    ],
+    "polygon": [
+      [
+        101.415,
+        3.099
+      ],
+      [
+        101.424,
+        3.099
+      ],
+      [
+        101.424,
+        3.091
+      ],
+      [
+        101.415,
+        3.091
+      ],
+      [
+        101.415,
+        3.099
+      ]
+    ],
+    "groundElevationM": 4.1,
+    "riverFloodThresholdM": 4.3,
+    "crestSubmergenceCm": 35,
+    "evacTimeMin": 15,
+    "icon": "\ud83c\udfde\ufe0f",
+    "corridor": "125-acre wetland retention lake edge & jogging boardwalks",
+    "safeBypass": "Upper perimeter bund and elevated town park boardwalk",
+    "desc": "Active blue-green sponge retention lake absorbing up to 100% capacity."
+  },
+  {
+    "id": "zone-meru-junction",
+    "code": "Jalan Meru",
+    "name": "Jalan Meru Commercial Junction & BBR Gateway",
+    "shortName": "Jalan Meru Junction",
+    "category": "arterial",
+    "coord": [
+      101.4395,
+      3.097
+    ],
+    "polygon": [
+      [
+        101.433,
+        3.1025
+      ],
+      [
+        101.446,
+        3.1025
+      ],
+      [
+        101.446,
+        3.0915
+      ],
+      [
+        101.433,
+        3.0915
+      ],
+      [
+        101.433,
+        3.1025
+      ]
+    ],
+    "groundElevationM": 4.4,
+    "riverFloodThresholdM": 4.5,
+    "crestSubmergenceCm": 50,
+    "evacTimeMin": 15,
+    "icon": "\ud83c\udfe2",
+    "corridor": "Persiaran Klang / Jalan Meru main gateway junction",
+    "safeBypass": "NKVE Highway elevated slip road & Persiaran Mokhtar Dahari",
+    "desc": "Major arterial junction. Severely submerged when Sg. Binjai crosses 4.50m (Danger)."
+  },
+  {
+    "id": "zone-aman-perdana",
+    "code": "Aman Perdana",
+    "name": "Taman Aman Perdana Gated Township",
+    "shortName": "Taman Aman Perdana",
+    "category": "residential",
+    "coord": [
+      101.405,
+      3.118
+    ],
+    "polygon": [
+      [
+        101.396,
+        3.126
+      ],
+      [
+        101.412,
+        3.126
+      ],
+      [
+        101.412,
+        3.11
+      ],
+      [
+        101.396,
+        3.11
+      ],
+      [
+        101.396,
+        3.126
+      ]
+    ],
+    "groundElevationM": 4.3,
+    "riverFloodThresholdM": 4.55,
+    "crestSubmergenceCm": 35,
+    "evacTimeMin": 22,
+    "icon": "\ud83c\udfe1",
+    "corridor": "Jalan Aman Perdana & West Coast Expressway corridor",
+    "safeBypass": "Jalan Kapar elevated link toward Meru West high bypass",
+    "desc": "Established residential neighbourhood northwest of BBR. Controlled internal retention lakes buffer minor events."
+  },
+  {
+    "id": "zone-meru-south",
+    "code": "Meru South",
+    "name": "Meru South & Bukit Kapar Agricultural Fringe",
+    "shortName": "Meru South / Bukit Kapar",
+    "category": "residential",
+    "coord": [
+      101.428,
+      3.125
+    ],
+    "polygon": [
+      [
+        101.418,
+        3.131
+      ],
+      [
+        101.435,
+        3.131
+      ],
+      [
+        101.435,
+        3.118
+      ],
+      [
+        101.418,
+        3.118
+      ],
+      [
+        101.418,
+        3.131
+      ]
+    ],
+    "groundElevationM": 4.7,
+    "riverFloodThresholdM": 4.8,
+    "crestSubmergenceCm": 25,
+    "evacTimeMin": 18,
+    "icon": "\ud83c\udf3e",
+    "corridor": "Jalan Teratai / Jalan Paip rural-suburban collector",
+    "safeBypass": "Persiaran Hamzah Alang toward Setia Alam elevated spur",
+    "desc": "Transition zone between BBR and Meru. Moderate slope prevents stagnant standing water."
+  },
+  {
+    "id": "zone-meru-riverbank",
+    "code": "Pekan Meru",
+    "name": "Pekan Meru Low-Lying Riverbank & Market Dip",
+    "shortName": "Pekan Meru Riverbank",
+    "category": "commercial",
+    "coord": [
+      101.4385,
+      3.1365
+    ],
+    "polygon": [
+      [
+        101.432,
+        3.144
+      ],
+      [
+        101.446,
+        3.144
+      ],
+      [
+        101.446,
+        3.129
+      ],
+      [
+        101.432,
+        3.129
+      ],
+      [
+        101.432,
+        3.144
+      ]
+    ],
+    "groundElevationM": 3.8,
+    "riverFloodThresholdM": 4.2,
+    "crestSubmergenceCm": 60,
+    "evacTimeMin": 25,
+    "icon": "\ud83c\udfdb\ufe0f",
+    "corridor": "Jalan Meru low market dip & Sg. Binjai riverbank",
+    "safeBypass": "Persiaran Bukit Raja 1 / Jalan Haji Abdul Manan",
+    "desc": "Lowest river corridor (3.8m). First to experience storm drain backwater locking and overtopping."
+  },
+  {
+    "id": "zone-berkeley-engann",
+    "code": "Berkeley",
+    "name": "Taman Berkeley & Kawasan Perniagaan Eng Ann",
+    "shortName": "Taman Berkeley / Eng Ann",
+    "category": "residential",
+    "coord": [
+      101.458,
+      3.058
+    ],
+    "polygon": [
+      [
+        101.45,
+        3.064
+      ],
+      [
+        101.467,
+        3.064
+      ],
+      [
+        101.467,
+        3.052
+      ],
+      [
+        101.45,
+        3.052
+      ],
+      [
+        101.45,
+        3.064
+      ]
+    ],
+    "groundElevationM": 4.5,
+    "riverFloodThresholdM": 4.7,
+    "crestSubmergenceCm": 35,
+    "evacTimeMin": 16,
+    "icon": "\ud83c\udfe1",
+    "corridor": "Lebuh Rajawali & Jalan Kasawari commercial spine",
+    "safeBypass": "Federal Highway elevated viaduct toward I-City / Shah Alam",
+    "desc": "Mature residential and commercial hub. Flash ponding at underpasses during torrential downpours."
+  },
+  {
+    "id": "zone-bandar-klang",
+    "code": "Bandar Klang",
+    "name": "Bandar Klang Town Centre & Sg. Klang Waterfront",
+    "shortName": "Bandar Klang (Heritage)",
+    "category": "commercial",
+    "coord": [
+      101.448,
+      3.045
+    ],
+    "polygon": [
+      [
+        101.44,
+        3.054
+      ],
+      [
+        101.457,
+        3.054
+      ],
+      [
+        101.457,
+        3.036
+      ],
+      [
+        101.44,
+        3.036
+      ],
+      [
+        101.44,
+        3.054
+      ]
+    ],
+    "groundElevationM": 3.4,
+    "riverFloodThresholdM": 4.15,
+    "crestSubmergenceCm": 70,
+    "evacTimeMin": 25,
+    "icon": "\ud83c\udfdb\ufe0f",
+    "corridor": "Jalan Tengku Kelana & Jambatan Kota / Sg. Klang waterfront",
+    "safeBypass": "Jalan Meru / Bukit Kuda elevated high ground",
+    "desc": "Historic lowland commercial waterfront at confluence of Sg. Klang. Highly vulnerable to king tides."
+  },
+  {
+    "id": "zone-rasau-tugu",
+    "code": "Sg. Rasau",
+    "name": "Sg. Rasau & Tugu Keris Industrial Corridor",
+    "shortName": "Sg. Rasau / Tugu Keris",
+    "category": "commercial",
+    "coord": [
+      101.472,
+      3.056
+    ],
+    "polygon": [
+      [
+        101.464,
+        3.063
+      ],
+      [
+        101.482,
+        3.063
+      ],
+      [
+        101.482,
+        3.049
+      ],
+      [
+        101.464,
+        3.049
+      ],
+      [
+        101.464,
+        3.063
+      ]
+    ],
+    "groundElevationM": 4.0,
+    "riverFloodThresholdM": 4.35,
+    "crestSubmergenceCm": 45,
+    "evacTimeMin": 18,
+    "icon": "\ud83c\udfed",
+    "corridor": "Federal Highway KM 16 & Sg. Rasau barrage gates",
+    "safeBypass": "NKVE / Shah Alam elevated highway links",
+    "desc": "Major gateway corridor monitored by Sg. Rasau JPS station. Subject to backflow during Sg. Klang peak."
+  },
+  {
+    "id": "zone-rantau-panjang",
+    "code": "Rantau Panjang",
+    "name": "Kampung Rantau Panjang & Sg. Puloh Estuary",
+    "shortName": "Rantau Panjang Estuary",
+    "category": "residential",
+    "coord": [
+      101.398,
+      3.072
+    ],
+    "polygon": [
+      [
+        101.385,
+        3.082
+      ],
+      [
+        101.408,
+        3.082
+      ],
+      [
+        101.408,
+        3.062
+      ],
+      [
+        101.385,
+        3.062
+      ],
+      [
+        101.385,
+        3.082
+      ]
+    ],
+    "groundElevationM": 3.2,
+    "riverFloodThresholdM": 4.1,
+    "crestSubmergenceCm": 75,
+    "evacTimeMin": 28,
+    "icon": "\ud83c\udf0a",
+    "corridor": "Jalan Rantau Panjang & Selat Klang river mouth",
+    "safeBypass": "Jalan Kapar elevated bridge direct to Klang Town",
+    "desc": "Extremely low coastal floodplain (3.2m). Highest risk of combined river overtopping and coastal tidal surge."
+  },
+  {
+    "id": "zone-kapar-belt",
+    "code": "Kapar",
+    "name": "Kapar Coastal Belt (Batu 4 - Batu 6)",
+    "shortName": "Kapar Coastal Belt",
+    "category": "residential",
+    "coord": [
+      101.382,
+      3.105
+    ],
+    "polygon": [
+      [
+        101.372,
+        3.118
+      ],
+      [
+        101.395,
+        3.118
+      ],
+      [
+        101.395,
+        3.092
+      ],
+      [
+        101.372,
+        3.092
+      ],
+      [
+        101.372,
+        3.118
+      ]
+    ],
+    "groundElevationM": 3.7,
+    "riverFloodThresholdM": 4.25,
+    "crestSubmergenceCm": 50,
+    "evacTimeMin": 24,
+    "icon": "\ud83c\udfe1",
+    "corridor": "Federal Route 5 (Jalan Kapar) coastal corridor",
+    "safeBypass": "West Coast Expressway (WCE) elevated ramp interchange",
+    "desc": "Coastal ribbon community. Vulnerable to tidal gate backwater when high tide coincides with rainstorm."
+  },
+  {
+    "id": "zone-safe-highground",
+    "code": "Masjid BBR",
+    "name": "Persiaran Bukit Raja Spine & Masjid BBR (PPS)",
+    "shortName": "Masjid BBR (Safe High Ground)",
+    "category": "safe",
+    "coord": [
+      101.42946,
+      3.08999
+    ],
+    "polygon": [
+      [
+        101.426,
+        3.0925
+      ],
+      [
+        101.433,
+        3.0925
+      ],
+      [
+        101.433,
+        3.0875
+      ],
+      [
+        101.426,
+        3.0875
+      ],
+      [
+        101.426,
+        3.0925
+      ]
+    ],
+    "groundElevationM": 5.6,
+    "riverFloodThresholdM": 6.2,
+    "crestSubmergenceCm": 0,
+    "evacTimeMin": 0,
+    "icon": "\ud83d\udee1\ufe0f",
+    "corridor": "High-Elevation Evacuation Spine (>5.5m DEM)",
+    "safeBypass": "Primary designated relief corridor to official APM / NADMA relief centre",
+    "desc": "Elevated ridge immune to river overflow. Designated refuge zone."
   }
 ];
 
@@ -622,7 +1199,12 @@ export function initInundationMarkers(map, onCardClick, actions = {}) {
 export function openZonePopup(zoneId) {
   const item = zoneMarkers.find(m => m.zone.id === zoneId);
   if (item && mapInstance) {
-    mapInstance.easeTo({ center: item.zone.coord, zoom: 15.5 });
+    zoneMarkers.forEach(m => {
+      if (m.popup && m.popup.isOpen && m.popup.isOpen() && m.zone.id !== zoneId) {
+        m.popup.remove();
+      }
+    });
+    mapInstance.easeTo({ center: item.zone.coord, zoom: 15.2, duration: 600 });
     if (item.popup) {
       item.popup.addTo(mapInstance);
     }
@@ -690,7 +1272,7 @@ export function renderRiskSectionWidget(scheduleList, activeSection = currentSec
 
   // Classify areas into sections
   const floodedList = scheduleList.filter(z => z.status === "CURRENT_FLOOD");
-  const highRiskList = scheduleList.filter(z => z.status === "PREDICTED_FLOOD" || (z.willFlood && z.spareTimeMin <= 15));
+  const highRiskList = scheduleList.filter(z => z.status === "PREDICTED_FLOOD");
   const moderateList = scheduleList.filter(z => z.status === "WARNING");
   const safeList = scheduleList.filter(z => z.status === "SAFE");
 
@@ -942,7 +1524,7 @@ export function updateAreaZonePolygons(scheduleList, activeSection = "all") {
     if (activeSection !== "all") {
       const matchesSection = 
         (activeSection === "flooded" && data.status === "CURRENT_FLOOD") ||
-        (activeSection === "high" && (data.status === "PREDICTED_FLOOD" || (data.willFlood && data.spareTimeMin <= 15))) ||
+        (activeSection === "high" && data.status === "PREDICTED_FLOOD") ||
         (activeSection === "moderate" && data.status === "WARNING") ||
         (activeSection === "safe" && data.status === "SAFE");
 
