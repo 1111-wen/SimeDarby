@@ -340,11 +340,7 @@ function renderReportSuccessView(data) {
           </div>
         ` : ''}
 
-        <!-- Photo Evidence -->
-        <div class="submitted-photo-wrap">
-          <div style="font-size:11px; font-weight:700; color:var(--muted); margin-bottom:4px;">📷 Photo Evidence Uploaded:</div>
-          <img src="${data.photo}" alt="Submitted Evidence" class="submitted-photo-img" />
-        </div>
+
 
         <!-- Live Impact Banner -->
         <div class="community-impact-banner">
