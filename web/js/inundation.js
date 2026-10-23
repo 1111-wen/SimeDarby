@@ -1324,7 +1324,45 @@ export function openZonePopup(zoneId) {
   }
 }
 
-export function updateInundationMarkers(scheduleList) {
+export function filterInundationMarkersByCategory(scheduleList, activeCategory = "all") {
+  if (!zoneMarkers || zoneMarkers.length === 0) return;
+
+  // 1. Strictly update map polygons
+  updateAreaZonePolygons(scheduleList, activeCategory);
+
+  // 2. Filter map pins and popups
+  let filteredSchedule = scheduleList || [];
+  if (activeCategory === "flooded") filteredSchedule = filteredSchedule.filter(z => z.status === "CURRENT_FLOOD");
+  else if (activeCategory === "high") filteredSchedule = filteredSchedule.filter(z => z.status === "PREDICTED_FLOOD");
+  else if (activeCategory === "moderate") filteredSchedule = filteredSchedule.filter(z => z.status === "WARNING");
+  else if (activeCategory === "safe") filteredSchedule = filteredSchedule.filter(z => z.status === "SAFE");
+
+  const filteredIds = new Set(filteredSchedule.map(f => f.id));
+  zoneMarkers.forEach(({ zone, el, popup }) => {
+    if (activeCategory === "all" || filteredIds.has(zone.id)) {
+      el.style.display = "";
+      el.style.opacity = "1";
+    } else {
+      el.style.display = "none";
+      if (popup && popup.isOpen && popup.isOpen()) popup.remove();
+    }
+  });
+}
+
+export function resetZoneFilters() {
+  currentSectionFilter = "all";
+  if (zoneMarkers) {
+    zoneMarkers.forEach(({ el }) => {
+      el.style.display = "";
+      el.style.opacity = "1";
+    });
+  }
+  if (currentSchedule && currentSchedule.length > 0) {
+    updateAreaZonePolygons(currentSchedule, "all");
+  }
+}
+
+export function updateInundationMarkers(scheduleList, activeCategory = currentSectionFilter || "all") {
   if (!zoneMarkers || zoneMarkers.length === 0) return;
   currentSchedule = scheduleList;
 
@@ -1363,9 +1401,9 @@ export function updateInundationMarkers(scheduleList) {
     }
   });
 
-  // Automatically update the Risk Section Widget counts and areas
-  updateAreaZonePolygons(scheduleList, currentSectionFilter);
-  renderRiskSectionWidget(scheduleList, currentSectionFilter);
+  // Automatically update the Risk Section Widget counts and filter map
+  filterInundationMarkersByCategory(scheduleList, activeCategory);
+  renderRiskSectionWidget(scheduleList, activeCategory);
 }
 
 
@@ -1603,7 +1641,7 @@ export function initAreaZoneLayers(map) {
       source: "fs-area-zones",
       paint: {
         "fill-color": ["coalesce", ["get", "fillColor"], "#22c55e"],
-        "fill-opacity": ["coalesce", ["get", "fillOpacity"], 0.20]
+        "fill-opacity": ["to-number", ["coalesce", ["get", "fillOpacity"], 0.20], 0.20]
       }
     }, beforeLayer);
   }

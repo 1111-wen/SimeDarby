@@ -5,7 +5,7 @@ import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps,
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
 import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, setSponge3DMode, setPredictLakeHighlight, getTownshipSpongeSummary, filterSpongeCategory } from "./sponge.js";
-import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, formatForecastOffsetTime, initInundationMarkers, updateInundationMarkers, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, VULNERABILITY_ZONES } from "./inundation.js";
+import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, formatForecastOffsetTime, initInundationMarkers, updateInundationMarkers, filterInundationMarkersByCategory, updateAreaZonePolygons, resetZoneFilters, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, VULNERABILITY_ZONES } from "./inundation.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -1135,26 +1135,8 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
     bindAreaCardClicks(ui.q4AreaScheduleSlot);
   }
 
-  // Update map polygons and pins according to activeCategory
-  updateAreaZonePolygons(schedule, activeCategory);
-
-  // Filter map pins according to activeCategory
-  let filteredSchedule = schedule;
-  if (activeCategory === "flooded") filteredSchedule = schedule.filter(z => z.status === "CURRENT_FLOOD");
-  else if (activeCategory === "high") filteredSchedule = schedule.filter(z => z.status === "PREDICTED_FLOOD");
-  else if (activeCategory === "moderate") filteredSchedule = schedule.filter(z => z.status === "WARNING");
-  else if (activeCategory === "safe") filteredSchedule = schedule.filter(z => z.status === "SAFE");
-
-  const filteredIds = new Set(filteredSchedule.map(f => f.id));
-  zoneMarkers.forEach(({ zone, el, popup }) => {
-    if (activeCategory === "all" || filteredIds.has(zone.id)) {
-      el.style.display = "";
-      el.style.opacity = "1";
-    } else {
-      el.style.display = "none";
-      if (popup && popup.isOpen && popup.isOpen()) popup.remove();
-    }
-  });
+  // Update map markers, badges, and polygons according to activeCategory
+  updateInundationMarkers(schedule, activeCategory);
 }
 
 function closePredictModal() {
@@ -1165,12 +1147,7 @@ function closePredictModal() {
     ui.predictTimePopup.hidden = true;
     ui.predictTimePopup.style.display = "none";
   }
-  // Restore all markers and polygons
-  zoneMarkers.forEach(({ el }) => {
-    el.style.display = "";
-    el.style.opacity = "1";
-  });
-  updateAreaZonePolygons(currentSchedule, "all");
+  resetZoneFilters();
 }
 
 function bindAreaCardClicks(container) {
