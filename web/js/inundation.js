@@ -933,25 +933,60 @@ export function computeAreaFloodSchedule(currentWl, predWl, currentTimestampStr 
 /**
  * Generate formatted HTML for the full FloodShield Evacuation & Predict Panel
  */
-export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentTimestampStr, currentMin = 0) {
+export function formatForecastOffsetTime(baseStr, addMins = 0) {
+  if (!baseStr) return `+${addMins}m`;
+
+  // 1. Check if 12-hour clock (e.g. "9:00 AM", "09:30 PM")
+  const ampmMatch = baseStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+  if (ampmMatch && ampmMatch[3]) {
+    let hours = parseInt(ampmMatch[1], 10);
+    const mins = parseInt(ampmMatch[2], 10);
+    const meridiem = ampmMatch[3].toUpperCase();
+
+    if (meridiem === "PM" && hours < 12) hours += 12;
+    if (meridiem === "AM" && hours === 12) hours = 0;
+
+    const totalMins = (hours * 60 + mins + addMins) % (24 * 60);
+    let newH = Math.floor(totalMins / 60);
+    const newM = totalMins % 60;
+    let newMeridiem = "AM";
+    if (newH >= 12) {
+      newMeridiem = "PM";
+      if (newH > 12) newH -= 12;
+    }
+    if (newH === 0) newH = 12;
+    return `${newH}:${newM < 10 ? '0' : ''}${newM} ${newMeridiem}`;
+  }
+
+  // 2. Check 24-hour clock or date timestamp (e.g. "27/11/2024 20:00" or "20:00")
+  const timeMatch = baseStr.match(/(\d{1,2}):(\d{2})/);
+  if (timeMatch) {
+    const hours = parseInt(timeMatch[1], 10);
+    const mins = parseInt(timeMatch[2], 10);
+    const totalMins = (hours * 60 + mins + addMins) % (24 * 60);
+    const newH = Math.floor(totalMins / 60);
+    const newM = totalMins % 60;
+    const pad = n => (n < 10 ? '0' + n : '' + n);
+    return `${pad(newH)}:${pad(newM)}`;
+  }
+
+  return `+${addMins}m`;
+}
+
+export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentTimestampStr, activeLeadMin = 0, baseTimestampStr = currentTimestampStr) {
   const floodedCount = scheduleList.filter(z => z.status === "CURRENT_FLOOD").length;
   const highRiskCount = scheduleList.filter(z => z.status === "PREDICTED_FLOOD").length;
   const modCount = scheduleList.filter(z => z.status === "WARNING").length;
 
-  const forecastOptions = [
-    { min: 0, time: "9:00 AM", label: "Current", desc: "Dry" },
-    { min: 30, time: "9:30 AM", label: "Onset", desc: "Rain" },
-    { min: 60, time: "10:00 AM", label: "Peak Flood", desc: "Danger" },
-    { min: 90, time: "10:30 AM", label: "Receding", desc: "Drain" },
-    { min: 120, time: "11:00 AM", label: "Recovery", desc: "Safe" }
-  ];
+  const leadOffsets = [0, 30, 60, 90, 120];
 
-  const chipsHtml = forecastOptions.map(opt => {
-    const isActive = Math.abs(currentMin - opt.min) < 15;
+  const chipsHtml = leadOffsets.map(mins => {
+    const formattedTime = formatForecastOffsetTime(baseTimestampStr, mins);
+    const isActive = activeLeadMin === mins;
+    const label = mins === 0 ? `${formattedTime} (Current)` : formattedTime;
     return `
-      <button type="button" class="time-chip ${isActive ? 'active' : ''}" data-min="${opt.min}" title="Preview area flood condition at ${opt.time}">
-        <span>${opt.time}</span>
-        <small style="opacity:0.85;">(${opt.label})</small>
+      <button type="button" class="time-chip ${isActive ? 'active' : ''}" data-lead="${mins}" title="Preview area flood condition at ${formattedTime}">
+        <span>${label}</span>
       </button>
     `;
   }).join("");
@@ -1057,6 +1092,7 @@ export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentT
     </div>
   `;
 }
+
 
 /**
  * Generate formatted HTML for the "Area Flood Schedule" container (used inside Q4 drawer)

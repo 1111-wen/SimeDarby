@@ -5,7 +5,7 @@ import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps,
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
 import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, setSponge3DMode, setPredictLakeHighlight, getTownshipSpongeSummary, filterSpongeCategory } from "./sponge.js";
-import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, initInundationMarkers, updateInundationMarkers, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, VULNERABILITY_ZONES } from "./inundation.js";
+import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, formatForecastOffsetTime, initInundationMarkers, updateInundationMarkers, openZonePopup, initRiskSectionControls, renderRiskSectionWidget, VULNERABILITY_ZONES } from "./inundation.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -1056,33 +1056,53 @@ function setForecastShift(shifted, toastUser = true) {
   }
 }
 
-function updatePredictModalView() {
-  let currentWl = 2.10, predWl = 2.50, timeLabel = "9:00 AM";
+function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin || 0) {
+  state.selectedForecastLeadMin = activeLeadMin;
+
+  let currentWl = 2.10, predWl = 2.50, timeLabel = "9:00 AM", baseTimeStr = "9:00 AM";
 
   if (state.timelineMode === "q4_2024" && state.q4Data && state.q4Data[state.q4CurrentIndex]) {
-    const pt = state.q4Data[state.q4CurrentIndex];
-    currentWl = pt.actual_level_m;
-    predWl = pt.pred_xgb_m;
-    timeLabel = pt.date_display;
+    const baseIdx = state.q4CurrentIndex;
+    const pt = state.q4Data[baseIdx];
+    baseTimeStr = pt.date_display;
+
+    // Calculate future telemetry based on activeLeadMin (hourly data interpolation)
+    const step = activeLeadMin / 60.0;
+    const targetIdx = baseIdx + step;
+    const i0 = Math.min(state.q4Data.length - 1, Math.floor(targetIdx));
+    const frac = targetIdx - i0;
+    const nextIdx = Math.min(state.q4Data.length - 1, i0 + 1);
+
+    const d0 = state.q4Data[i0];
+    const d1 = state.q4Data[nextIdx];
+
+    const actWl = d0.actual_level_m + (d1.actual_level_m - d0.actual_level_m) * frac;
+    const pWl = d0.pred_xgb_m + (d1.pred_xgb_m - d0.pred_xgb_m) * frac;
+
+    currentWl = Number(actWl.toFixed(2));
+    predWl = Number(pWl.toFixed(2));
+    timeLabel = formatForecastOffsetTime(baseTimeStr, activeLeadMin);
   } else {
-    const telem = getMinuteTelemetry(state.t, state.forecastShifted);
+    baseTimeStr = formatClockTime(state.t);
+    const forecastMin = state.t + activeLeadMin;
+    const telem = getMinuteTelemetry(forecastMin, state.forecastShifted);
     currentWl = telem.binjai;
-    if (state.t >= 15 && state.t < 60) {
+    if (forecastMin >= 15 && forecastMin < 60) {
       predWl = Number((telem.binjai + 0.65).toFixed(2));
-    } else if (state.t >= 60 && state.t < 90) {
+    } else if (forecastMin >= 60 && forecastMin < 90) {
       predWl = Number((telem.binjai + (state.forecastShifted ? 0.45 : -0.25)).toFixed(2));
-    } else if (state.t >= 90) {
+    } else if (forecastMin >= 90) {
       predWl = Number((telem.binjai - 0.55).toFixed(2));
     } else {
       predWl = Number((telem.binjai + 0.45).toFixed(2));
     }
-    timeLabel = formatClockTime(state.t);
+    timeLabel = formatForecastOffsetTime(baseTimeStr, activeLeadMin);
   }
 
   const schedule = computeAreaFloodSchedule(currentWl, predWl, timeLabel);
 
   if (ui.predictPanelSlot) {
-    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel, state.t);
+    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel, activeLeadMin, baseTimeStr);
     const closeBtn = document.getElementById("predictCloseBtn");
     if (closeBtn) closeBtn.onclick = () => closePredictModal();
 
@@ -1091,8 +1111,8 @@ function updatePredictModalView() {
       chip.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const min = parseInt(chip.dataset.min, 10);
-        applyTimeScrub(min);
+        const lead = parseInt(chip.dataset.lead, 10);
+        updatePredictModalView(lead);
       });
     });
 
@@ -1157,7 +1177,8 @@ function applyTimeScrub(min, fromFastForward = false) {
   }
 
   // Update FloodShield prediction and evacuation schedule based on current scrub time
-  updatePredictModalView();
+  state.selectedForecastLeadMin = 0;
+  updatePredictModalView(0);
 
   if (min > 0) {
     dismissToast();
@@ -1287,7 +1308,8 @@ function applyQ4Telemetry(idx) {
   state.selectedForecastMin = simMin;
 
   // Dynamic Area & Time Flood Inundation Schedule based on Sg. Binjai telemetry
-  updatePredictModalView();
+  state.selectedForecastLeadMin = 0;
+  updatePredictModalView(0);
 
   update(true);
   updatePredictVisuals();
