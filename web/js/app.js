@@ -1,6 +1,7 @@
 import { initCommunityReportMarkers, showCommunityReportOnMap, COMMUNITY_REPORTS } from "./community_reports.js";
 import { initReportModal, openReportModal, closeReportModal } from "./report_modal.js";
 import { initEvacAlertWidget, openEvacAlertPanel, closeEvacAlertPanel, updateEvacAlertView, isEvacAlertOpen } from "./evac_alert.js";
+import { initSosRescueSystem, openSosModal, closeSosModal, openRoleModal, closeRoleModal, openAdminSosPanel, closeAdminSosPanel, getCurrentRole, showAdminSosMarkers, hideAdminSosMarkers } from "./sos_rescue.js";
 // FloodSafe Route: main app. Wires the map, flood scenarios, routing and the UI together.
 import { CONFIG } from "./config.js";
 import { loadScenarios, pickScenario, level, fetchLiveFloodPrediction } from "./flood.js";
@@ -512,6 +513,9 @@ async function loadData() {
 
       closePredictModal();
       closeReportModal();
+      closeSosModal();
+      closeRoleModal();
+      closeAdminSosPanel();
 
       if (map.getSource("fs-route")) map.getSource("fs-route").setData(emptyFC);
       if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
@@ -525,6 +529,19 @@ async function loadData() {
       resetZoneFilters();
       update(false);
     }
+  });
+
+  // Initialize Emergency SOS Rescue & Role (Resident / Admin) System
+  initSosRescueSystem({
+    map,
+    onRouteToRescue: ({ from, to }) => {
+      setFrom(from, false);
+      setTo(to, false);
+      state.lastRouteKey = null;
+      update(false);
+      toast(`🚤 Rescue Route Plotted: ${from.name} ➔ ${to.name}`);
+    },
+    toast: msg => toast(msg)
   });
 
   const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
@@ -2033,6 +2050,9 @@ if (ui.predictBtn) {
       // Mutually close report modal if open
       closeReportModal();
       closeEvacAlertPanel();
+      closeSosModal();
+      closeRoleModal();
+      closeAdminSosPanel();
 
       // Reset to time selection mode whenever Predict button is opened
       state.predictTimeSelected = false;
@@ -2051,6 +2071,9 @@ const riskAlertBtnTop = document.getElementById("riskAlertBtn");
 if (riskAlertBtnTop) {
   riskAlertBtnTop.addEventListener("click", () => {
     closeEvacAlertPanel();
+    closeSosModal();
+    closeRoleModal();
+    closeAdminSosPanel();
     setTimeout(() => {
       const riskPanel = document.getElementById("riskSectionPanel");
       if (riskPanel && !riskPanel.hidden && riskPanel.style.display !== "none") {
@@ -2078,6 +2101,9 @@ if (ui.reportBtn) {
       if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
       closePredictModal();
       closeEvacAlertPanel();
+      closeSosModal();
+      closeRoleModal();
+      closeAdminSosPanel();
 
       openReportModal();
       toast("📢 Citizen Report: Upload flood photo & report affected areas");

@@ -175,6 +175,18 @@
           <span class="evac-alert-btn-icon">🚨</span>
           <span class="evac-alert-btn-label">Alert</span>
         </button>
+
+        <!-- SOS Emergency Rescue Button (Directly under Alert) -->
+        <button type="button" class="sos-btn-main" id="sosBtn" aria-pressed="false" title="Request Emergency Rescue Help (SOS)">
+          <span class="sos-btn-icon">🆘</span>
+          <span class="sos-btn-label">SOS</span>
+        </button>
+
+        <!-- Role Selector Button (Directly under SOS) -->
+        <button type="button" class="role-btn-main" id="roleBtn" aria-pressed="false" title="Switch User Role (Resident / Admin)">
+          <span class="role-btn-icon" id="roleBtnIcon">👤</span>
+          <span class="role-btn-label" id="roleBtnLabel">Role</span>
+        </button>
       </div>
 
       <!-- 2. Side Action Panels Container (Opens NEXT TO the buttons on the left!) -->
@@ -213,6 +225,11 @@
         <div class="evac-alert-panel" id="evacAlertPanel" hidden>
           <div id="evacAlertPanelSlot"></div>
         </div>
+
+        <!-- Admin SOS Rescue Dispatch Command Panel -->
+        <div class="admin-sos-panel" id="adminSosPanel" hidden>
+          <div id="adminSosPanelSlot"></div>
+        </div>
       </div>
     </div>
 
@@ -220,6 +237,20 @@
     <div class="report-modal-backdrop" id="reportModalBackdrop" hidden>
       <div class="report-flood-modal" id="reportFloodModal">
         <div id="reportModalSlot"></div>
+      </div>
+    </div>
+
+    <!-- Dedicated Emergency SOS Rescue Request Modal (With Backdrop) -->
+    <div class="report-modal-backdrop" id="sosModalBackdrop" hidden>
+      <div class="report-flood-modal sos-modal" id="sosModal">
+        <div id="sosModalSlot"></div>
+      </div>
+    </div>
+
+    <!-- User Role Selector & Admin Authentication Modal (With Backdrop) -->
+    <div class="report-modal-backdrop" id="roleModalBackdrop" hidden>
+      <div class="report-flood-modal role-modal" id="roleModal">
+        <div id="roleModalSlot"></div>
       </div>
     </div>
 
