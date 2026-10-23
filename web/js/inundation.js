@@ -1268,7 +1268,7 @@ export function renderRiskSectionWidget(scheduleList, activeSection = currentSec
   const countSafe = document.getElementById("countSafe");
   const areasList = document.getElementById("riskSectionAreasList");
 
-  if (!areasList || !scheduleList || scheduleList.length === 0) return;
+  if (!scheduleList || scheduleList.length === 0) return;
 
   // Classify areas into sections
   const floodedList = scheduleList.filter(z => z.status === "CURRENT_FLOOD");
@@ -1290,18 +1290,48 @@ export function renderRiskSectionWidget(scheduleList, activeSection = currentSec
   else if (activeSection === "moderate") filtered = moderateList;
   else if (activeSection === "safe") filtered = safeList;
 
-  // Update area polygon highlights according to section
+  // 1. Strictly update area polygons: ONLY matching polygons are rendered on the map!
   updateAreaZonePolygons(scheduleList, activeSection);
 
-  // Filter/highlight map pins according to section
-  zoneMarkers.forEach(({ zone, el }) => {
-    if (activeSection === "all") {
+  // 2. Strictly filter map pins/popups: ONLY matching pins are shown on the map!
+  const filteredIds = new Set(filtered.map(f => f.id));
+  zoneMarkers.forEach(({ zone, el, popup }) => {
+    if (activeSection === "all" || filteredIds.has(zone.id)) {
+      el.style.display = "";
       el.style.opacity = "1";
     } else {
-      const isIncluded = filtered.some(f => f.id === zone.id);
-      el.style.opacity = isIncluded ? "1" : "0.22";
+      el.style.display = "none";
+      if (popup && popup.isOpen && popup.isOpen()) {
+        popup.remove();
+      }
     }
   });
+
+  // 3. Smoothly center or fit bounds to the filtered areas so user sees them immediately
+  if (activeSection !== "all" && filtered.length > 0 && mapInstance) {
+    if (filtered.length === 1) {
+      openZonePopup(filtered[0].id);
+    } else {
+      let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+      filtered.forEach(z => {
+        if (z.coord) {
+          minLng = Math.min(minLng, z.coord[0]);
+          maxLng = Math.max(maxLng, z.coord[0]);
+          minLat = Math.min(minLat, z.coord[1]);
+          maxLat = Math.max(maxLat, z.coord[1]);
+        }
+      });
+      if (minLng < maxLng && minLat < maxLat) {
+        mapInstance.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+          padding: { top: 90, bottom: 90, left: 90, right: 380 },
+          maxZoom: 15,
+          duration: 600
+        });
+      }
+    }
+  }
+
+  if (!areasList) return;
 
   if (filtered.length === 0) {
     const sectionNames = {
@@ -1393,8 +1423,17 @@ export function initRiskSectionControls() {
     btnClose.onclick = () => {
       panel.hidden = true;
       if (btnTrigger) btnTrigger.setAttribute("aria-expanded", "false");
-      // Reset pin opacities
-      zoneMarkers.forEach(({ el }) => { el.style.opacity = "1"; });
+      currentSectionFilter = "all";
+      chips.forEach(c => {
+        if (c.dataset.section === "all") c.classList.add("active");
+        else c.classList.remove("active");
+      });
+      // Restore all markers and all area polygons
+      zoneMarkers.forEach(({ el }) => {
+        el.style.display = "";
+        el.style.opacity = "1";
+      });
+      updateAreaZonePolygons(currentSchedule, "all");
     };
   }
 
@@ -1407,7 +1446,6 @@ export function initRiskSectionControls() {
     };
   });
 }
-
 
 export function initAreaZoneLayers(map) {
   if (!map) return;
@@ -1491,48 +1529,48 @@ export function updateAreaZonePolygons(scheduleList, activeSection = "all") {
 
   const mapByZoneId = new Map((scheduleList || []).map(s => [s.id, s]));
 
-  const features = VULNERABILITY_ZONES.filter(z => z.polygon).map(zone => {
+  let zonesToRender = VULNERABILITY_ZONES.filter(z => z.polygon);
+
+  // If a specific section is chosen, strictly filter to ONLY matching zones!
+  if (activeSection !== "all") {
+    zonesToRender = zonesToRender.filter(zone => {
+      const data = mapByZoneId.get(zone.id) || { status: "SAFE" };
+      return (
+        (activeSection === "flooded" && data.status === "CURRENT_FLOOD") ||
+        (activeSection === "high" && data.status === "PREDICTED_FLOOD") ||
+        (activeSection === "moderate" && data.status === "WARNING") ||
+        (activeSection === "safe" && data.status === "SAFE")
+      );
+    });
+  }
+
+  const features = zonesToRender.map(zone => {
     const data = mapByZoneId.get(zone.id) || { status: "SAFE", depthCm: 0, timeText: "Safe" };
 
     let fillColor = "#22c55e"; // Safe emerald green
-    let fillOpacity = 0.18;
+    let fillOpacity = 0.22;
     let lineColor = "#16a34a";
     let textColor = "#15803d";
     let statusLabel = "Safe";
 
     if (data.status === "CURRENT_FLOOD") {
       fillColor = "#ef4444"; // Red
-      fillOpacity = 0.46; // Strong opacity for active flood
+      fillOpacity = 0.48; // Strong opacity for active flood
       lineColor = "#b91c1c";
       textColor = "#991b1b";
       statusLabel = `Flooded (${data.depthCm}cm)`;
-    } else if (data.status === "PREDICTED_FLOOD" || (data.willFlood && data.spareTimeMin <= 15)) {
+    } else if (data.status === "PREDICTED_FLOOD") {
       fillColor = "#ea580c"; // High risk orange-red
-      fillOpacity = 0.38;
+      fillOpacity = 0.40;
       lineColor = "#c2410c";
       textColor = "#c2410c";
       statusLabel = `High Risk (${data.timeText})`;
     } else if (data.status === "WARNING") {
       fillColor = "#f59e0b"; // Moderate risk amber
-      fillOpacity = 0.28;
+      fillOpacity = 0.34;
       lineColor = "#d97706";
       textColor = "#b45309";
       statusLabel = `Moderate (${data.depthCm}cm)`;
-    }
-
-    // If a specific section is active in the filter, dim non-matching polygons
-    if (activeSection !== "all") {
-      const matchesSection = 
-        (activeSection === "flooded" && data.status === "CURRENT_FLOOD") ||
-        (activeSection === "high" && data.status === "PREDICTED_FLOOD") ||
-        (activeSection === "moderate" && data.status === "WARNING") ||
-        (activeSection === "safe" && data.status === "SAFE");
-
-      if (matchesSection) {
-        fillOpacity = Math.min(0.60, fillOpacity + 0.12);
-      } else {
-        fillOpacity = 0.06;
-      }
     }
 
     return {
