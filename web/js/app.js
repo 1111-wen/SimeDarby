@@ -632,6 +632,14 @@ function updatePredictVisuals() {
   altRouteMarkers.forEach(m => m.remove());
   altRouteMarkers = [];
 
+  // When Predict is active, hide the three recommended routes and their pills on the map
+  if (state.predictActive) {
+    if (map && map.getSource && map.getSource("fs-route")) map.getSource("fs-route").setData(emptyFC);
+    if (map && map.getSource && map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
+    if (map && map.getSource && map.getSource("fs-connector")) map.getSource("fs-connector").setData(emptyFC);
+    return;
+  }
+
   const t = state.selectedForecastMin !== undefined ? state.selectedForecastMin : 0;
 
   // 1. Determine wetland flood status & color based on forecast time
@@ -1185,6 +1193,10 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
     updateAreaZonePolygons(schedule, "all");
     resetZoneFilters();
   }
+
+  if (state.predictActive) {
+    updatePredictVisuals();
+  }
 }
 
 function closePredictModal() {
@@ -1197,6 +1209,7 @@ function closePredictModal() {
     ui.predictTimePopup.style.display = "none";
   }
   resetZoneFilters();
+  update(false);
 }
 
 function bindAreaCardClicks(container) {
@@ -1864,9 +1877,15 @@ function update(fromTick) {
     T
   };
 
-  // Always render the primary safe route (line) so it is visible and dynamically updating
-  map.getSource("fs-route").setData(line);
-  map.getSource("fs-connector").setData(emptyFC);
+  // Always render the primary safe route (line) so it is visible and dynamically updating (unless Predict is active)
+  if (state.predictActive) {
+    if (map.getSource("fs-route")) map.getSource("fs-route").setData(emptyFC);
+    if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
+    if (map.getSource("fs-connector")) map.getSource("fs-connector").setData(emptyFC);
+  } else {
+    if (map.getSource("fs-route")) map.getSource("fs-route").setData(line);
+    if (map.getSource("fs-connector")) map.getSource("fs-connector").setData(emptyFC);
+  }
 
   let currentSafeMins = 15;
   let currentSafeSub = "";
@@ -1980,6 +1999,7 @@ if (ui.predictBtn) {
       state.predictTimeSelected = false;
       state.predictCategoryFilter = "all";
       updatePredictModalView(0, "all");
+      updatePredictVisuals();
       toast("🔮 Forecast: Select a time window to preview area flood conditions");
     } else {
       closePredictModal();
