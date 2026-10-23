@@ -933,29 +933,86 @@ export function computeAreaFloodSchedule(currentWl, predWl, currentTimestampStr 
 /**
  * Generate formatted HTML for the full FloodShield Evacuation & Predict Panel
  */
-export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentTimestampStr) {
+export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentTimestampStr, currentMin = 0) {
+  const floodedCount = scheduleList.filter(z => z.status === "CURRENT_FLOOD").length;
+  const highRiskCount = scheduleList.filter(z => z.status === "PREDICTED_FLOOD").length;
+  const modCount = scheduleList.filter(z => z.status === "WARNING").length;
+
+  const forecastOptions = [
+    { min: 0, time: "9:00 AM", label: "Current", desc: "Dry" },
+    { min: 30, time: "9:30 AM", label: "Onset", desc: "Rain" },
+    { min: 60, time: "10:00 AM", label: "Peak Flood", desc: "Danger" },
+    { min: 90, time: "10:30 AM", label: "Receding", desc: "Drain" },
+    { min: 120, time: "11:00 AM", label: "Recovery", desc: "Safe" }
+  ];
+
+  const chipsHtml = forecastOptions.map(opt => {
+    const isActive = Math.abs(currentMin - opt.min) < 15;
+    return `
+      <button type="button" class="time-chip ${isActive ? 'active' : ''}" data-min="${opt.min}" title="Preview area flood condition at ${opt.time}">
+        <span>${opt.time}</span>
+        <small style="opacity:0.85;">(${opt.label})</small>
+      </button>
+    `;
+  }).join("");
+
+  const totalAffected = floodedCount + highRiskCount;
+  let bannerHtml = "";
+  if (totalAffected > 0) {
+    bannerHtml = `
+      <div class="predict-summary-banner banner-alert">
+        <span>🚨</span>
+        <div>
+          <strong>${totalAffected} Area(s) Flooded / High Risk</strong>
+          <small style="display:block; font-size:11px; opacity:0.9;">${floodedCount} Flooded &bull; ${highRiskCount} High Risk &bull; ${modCount} Moderate</small>
+        </div>
+      </div>
+    `;
+  } else if (modCount > 0) {
+    bannerHtml = `
+      <div class="predict-summary-banner" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">
+        <span>⚠️</span>
+        <div>
+          <strong>Surface Runoff / Ponding Active</strong>
+          <small style="display:block; font-size:11px;">${modCount} area(s) moderate ponding &bull; Roads passable</small>
+        </div>
+      </div>
+    `;
+  } else {
+    bannerHtml = `
+      <div class="predict-summary-banner banner-safe">
+        <span>✅</span>
+        <div>
+          <strong>All 18 Areas Dry & Safe</strong>
+          <small style="display:block; font-size:11px;">Normal river stage &bull; No road overtopping</small>
+        </div>
+      </div>
+    `;
+  }
+
   // Cards for all areas
   const cardsHtml = scheduleList.map(item => {
-    const isDanger = item.status === "CURRENT_FLOOD" || item.status === "PREDICTED_FLOOD";
-    const isWarning = item.status === "WARNING";
-    const borderCls = isDanger ? "border-danger" : isWarning ? "border-warning" : "border-safe";
+    let cardCls = "border-safe";
+    if (item.status === "CURRENT_FLOOD") cardCls = "border-danger";
+    else if (item.status === "PREDICTED_FLOOD") cardCls = "border-danger";
+    else if (item.status === "WARNING") cardCls = "border-warning";
 
     return `
-      <div class="area-sched-card ${borderCls}" data-zone-id="${item.id}" data-lat="${item.coord[1]}" data-lng="${item.coord[0]}" title="Click to view ${item.name} on map">
+      <div class="area-sched-card ${cardCls}" data-zone-id="${item.id}" data-lat="${item.coord[1]}" data-lng="${item.coord[0]}" title="Click to view ${item.name} on map">
         <div class="area-sched-head">
           <div class="area-sched-title">
             <span class="area-icon">${item.icon}</span>
-            <strong>${item.name}</strong>
-            <small class="area-elev">Ground: ${item.groundElevationM.toFixed(1)}m | Trigger: ${item.riverFloodThresholdM.toFixed(1)}m</small>
+            <strong>${item.shortName}</strong>
+            <small class="area-elev">Elev: ${item.groundElevationM.toFixed(1)}m | Trigger: ${item.riverFloodThresholdM.toFixed(1)}m</small>
           </div>
           <span class="sponge-badge ${item.badgeClass}">${item.badgeText}</span>
         </div>
         <div class="area-sched-time">
           <span class="time-clock-ico">⏱️</span>
           <strong>${item.timeText}</strong>
-          ${item.depthCm > 0 ? `<span class="depth-tag">🌊 ${item.depthCm} cm road depth</span>` : '<span class="depth-tag" style="background:#dcfce7; color:#15803d; border-color:#86efac;">Dry</span>'}
+          ${item.depthCm > 0 ? `<span class="depth-tag">🌊 ${item.depthCm} cm depth</span>` : '<span class="depth-tag" style="background:#dcfce7; color:#15803d; border-color:#86efac;">Dry</span>'}
           <span class="evac-spare-tag ${item.spareTimeMin <= 15 ? 'spare-danger' : 'spare-safe'}">
-            🏃 Evac Window: ${item.spareTimeMin <= 0 ? '0m' : item.spareTimeMin + 'm spare'}
+            🏃 Evac: ${item.spareTimeMin <= 0 ? '0m (Submerged)' : item.spareTimeMin + 'm window'}
           </span>
         </div>
         <div class="area-sched-action">
@@ -968,19 +1025,33 @@ export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentT
   return `
     <div class="floodshield-modal-content">
       <!-- Modal Header -->
-      <div class="floodshield-modal-head">
-        <div class="modal-head-title">
-          <span class="modal-head-icon">🔮</span>
+      <div class="risk-panel-header" style="margin-bottom:4px;">
+        <div class="risk-panel-title">
+          <span class="risk-panel-icon">🔮</span>
           <div>
-            <h2 style="margin:0; font-size:16px; color:var(--ink);">FloodShield: Area Inundation & Evacuation Schedule</h2>
-            <p class="modal-head-sub" style="margin:2px 0 0; font-size:11.5px; color:var(--muted);">Sg. Binjai Level: <strong>${Number(currentWl).toFixed(2)}m</strong> &bull; Forecast (t+3h): <strong>${Number(predWl).toFixed(2)}m</strong> &bull; Scrubber Time: <strong>${currentTimestampStr}</strong></p>
+            <strong>Area Flood Inundation Prediction</strong>
+            <small style="display:block; font-size:11px; color:var(--muted); font-weight:normal;">Sg. Binjai: <strong>${Number(currentWl).toFixed(2)}m</strong> &bull; Forecast: <strong>${currentTimestampStr}</strong></small>
           </div>
         </div>
-        <button type="button" class="floodshield-close-btn" id="predictCloseBtn" aria-label="Close prediction">&times;</button>
+        <button type="button" class="risk-panel-close" id="predictCloseBtn" aria-label="Close prediction">&times;</button>
       </div>
 
-      <!-- Detailed All-Area Inundation Schedule List -->
-      <div class="area-schedule-cards" style="max-height: 480px; margin-top:8px;">
+      <!-- Time Selection (FIRST) -->
+      <div class="predict-time-section">
+        <div class="predict-time-header">
+          <span>⏱️</span>
+          <span>Select Forecast Time Window:</span>
+        </div>
+        <div class="forecast-chips-grid">
+          ${chipsHtml}
+        </div>
+      </div>
+
+      <!-- Summary Banner for selected time -->
+      ${bannerHtml}
+
+      <!-- Detailed All-Area Inundation Conditions List -->
+      <div class="area-schedule-cards" style="max-height: 44vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
         ${cardsHtml}
       </div>
     </div>
@@ -1431,6 +1502,13 @@ export function initRiskSectionControls() {
     panel.hidden = false;
     panel.style.display = "flex";
     if (btnTrigger) btnTrigger.setAttribute("aria-expanded", "true");
+    const predictPopup = document.getElementById("predictTimePopup");
+    const predictBtn = document.getElementById("predictBtn");
+    if (predictPopup) {
+      predictPopup.hidden = true;
+      predictPopup.style.display = "none";
+    }
+    if (predictBtn) predictBtn.setAttribute("aria-pressed", "false");
     renderRiskSectionWidget(currentSchedule, currentSectionFilter);
   };
 

@@ -1082,9 +1082,20 @@ function updatePredictModalView() {
   const schedule = computeAreaFloodSchedule(currentWl, predWl, timeLabel);
 
   if (ui.predictPanelSlot) {
-    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel);
+    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel, state.t);
     const closeBtn = document.getElementById("predictCloseBtn");
     if (closeBtn) closeBtn.onclick = () => closePredictModal();
+
+    // Bind forecast time chip clicks to scrub time and preview conditions
+    ui.predictPanelSlot.querySelectorAll(".time-chip").forEach(chip => {
+      chip.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const min = parseInt(chip.dataset.min, 10);
+        applyTimeScrub(min);
+      });
+    });
+
     bindAreaCardClicks(ui.predictPanelSlot);
   }
 
@@ -1099,7 +1110,10 @@ function updatePredictModalView() {
 function closePredictModal() {
   state.predictActive = false;
   if (ui.predictBtn) ui.predictBtn.setAttribute("aria-pressed", "false");
-  if (ui.predictTimePopup) ui.predictTimePopup.hidden = true;
+  if (ui.predictTimePopup) {
+    ui.predictTimePopup.hidden = true;
+    ui.predictTimePopup.style.display = "none";
+  }
 }
 
 function bindAreaCardClicks(container) {
@@ -1855,15 +1869,27 @@ $("swapBtn").addEventListener("click", () => { const a = state.from; setFrom(sta
 
 // Predict Button & FloodShield Evacuation Prioritisation (Bottom Middle)
 if (ui.predictBtn) {
-  ui.predictBtn.addEventListener("click", () => {
+  ui.predictBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     state.predictActive = !state.predictActive;
     ui.predictBtn.setAttribute("aria-pressed", String(state.predictActive));
     if (ui.predictTimePopup) {
       ui.predictTimePopup.hidden = !state.predictActive;
+      ui.predictTimePopup.style.display = state.predictActive ? "flex" : "none";
     }
     if (state.predictActive) {
+      // Mutually close risk section panel if open
+      const riskPanel = document.getElementById("riskSectionPanel");
+      const riskBtn = document.getElementById("riskAlertBtn");
+      if (riskPanel) {
+        riskPanel.hidden = true;
+        riskPanel.style.display = "none";
+      }
+      if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
+
       updatePredictModalView();
-      toast("FloodShield: Active Evacuation Window Analysis & Area Flood Forecast");
+      toast("🔮 Forecast: Select a time window to preview area flood conditions");
     }
   });
 }

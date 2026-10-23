@@ -314,40 +314,131 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
 .predict-bar > * { pointer-events: auto; }
 
 .predict-btn-main {
-  min-height: 44px; padding: 0 22px; border-radius: 22px; border: 2px solid #5B3CC4;
-  background: #ffffff; font-weight: 700; font-size: 14.5px; color: #5B3CC4;
-  box-shadow: 0 4px 16px rgba(91, 60, 196, 0.25); cursor: pointer;
-  display: inline-flex; align-items: center; gap: 8px; transition: all .2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #5B3CC4;
+  color: #5B3CC4;
+  padding: 7px 15px;
+  border-radius: 22px;
+  box-shadow: 0 4px 16px rgba(91, 60, 196, 0.22);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
 }
 .predict-btn-main:hover {
-  transform: translateY(-2px); box-shadow: 0 6px 20px rgba(91, 60, 196, 0.38);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(91, 60, 196, 0.35);
+  background: #f8f6fe;
 }
 .predict-btn-main[aria-pressed="true"] {
-  background: #5B3CC4; color: #ffffff; border-color: #4a2cb5;
-  box-shadow: 0 0 20px rgba(91, 60, 196, 0.55);
+  background: #5B3CC4;
+  color: #ffffff;
+  border-color: #4a2cb5;
+  box-shadow: 0 0 16px rgba(91, 60, 196, 0.5);
 }
 .predict-btn-icon { font-size: 17px; }
 .predict-btn-label { letter-spacing: -0.01em; }
 
 /* Forecast Times Row: NO WHITE BOX CONTAINER, NO SCROLLBAR, FULL VISIBILITY */
 .predict-time-popup {
+  margin-top: 4px;
+  width: 350px;
+  max-width: calc(100vw - 24px);
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  margin: 0;
-  max-width: 100%;
-  width: auto;
-  overflow: visible;
-  animation: slideUpPopup .2s ease;
+  gap: 10px;
+  animation: slideDownRisk .2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 75vh;
+  box-sizing: border-box;
 }
 
-/* Fast Forward Slider & Demo Controller Panel */
+.predict-time-popup[hidden] {
+  display: none !important;
+}
+
+.predict-time-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 10px;
+}
+
+.predict-time-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.forecast-chips-grid {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.forecast-chips-grid .time-chip {
+  padding: 5px 9px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  cursor: pointer;
+  transition: all .15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.forecast-chips-grid .time-chip:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.forecast-chips-grid .time-chip.active {
+  background: #5B3CC4;
+  border-color: #4a2cb5;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(91, 60, 196, 0.35);
+}
+
+.predict-summary-banner {
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.predict-summary-banner.banner-alert {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+.predict-summary-banner.banner-safe {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}/* Fast Forward Slider & Demo Controller Panel */
 .ff-control-panel {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -506,13 +597,20 @@ details p { margin: 6px 0; }
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 8px;
 }
 
 @media (max-width: 899px) {
   .risk-section-widget {
-    top: 286px;
-    right: 10px;
-  }
+  position: absolute;
+  right: 14px;
+  top: 62px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
 }
 
 /* Alert / Warning Sign Trigger Button */
