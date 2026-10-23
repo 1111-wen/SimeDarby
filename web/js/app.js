@@ -650,25 +650,7 @@ function updatePredictVisuals() {
     wetlandMessage = "⚠️ Present Condition: Moderate Risk (9:00 AM)";
   }
 
-  setPredictLakeHighlight(lakeStatus);
-
-  // 2. Add message icon popup on Bandar Bukit Raja Wetland Lake
-  const wetlandEl = document.createElement("div");
-  wetlandEl.className = "wetland-flood-marker";
-  wetlandEl.style.zIndex = "2";
-  wetlandEl.innerHTML = `
-    <div class="wetland-flood-bubble">
-      <span class="wetland-bubble-icon">💬</span>
-      <div class="wetland-bubble-body">
-        <div class="wetland-bubble-title">Bandar Bukit Raja Wetland</div>
-        <div class="wetland-bubble-warning" style="${lakeStatus === 'orange' ? 'color:#e65100;' : (lakeStatus === 'safe' ? 'color:#2e7d32;' : '')}">${wetlandMessage}</div>
-      </div>
-    </div>
-    <div class="wetland-arrow" style="${lakeStatus === 'orange' ? 'border-top-color:#f57c00;' : (lakeStatus === 'safe' ? 'border-top-color:#0288d1;' : '')}"></div>
-  `;
-  wetlandMarker = new maplibregl.Marker({ element: wetlandEl, anchor: "bottom" })
-    .setLngLat(BBR_WETLAND_CENTROID)
-    .addTo(map);
+  // Natural basemap water & realistic map rendering preserved
 
   // 3. Dynamic Routes Rendering (15 mins non-shaded, 16 mins & 18 mins shaded)
   // Ensure the 3 routes KEEP CHANGING dynamically as user slides through the fast forward

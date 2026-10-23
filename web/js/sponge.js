@@ -257,32 +257,8 @@ export function setSpongeVisible(enabled) {
 export function setPredictLakeHighlight(colorOrMode) {
   currentLakeStatus = colorOrMode;
   if (!mapInstance) return;
-
-  if (colorOrMode) {
-    let lakeColor = "#e53935"; // Flooded red (default)
-    if (colorOrMode === "orange" || colorOrMode === "moderate") {
-      lakeColor = "#fb8c00"; // Moderate orange
-    } else if (colorOrMode === "safe" || colorOrMode === "blue") {
-      lakeColor = "#0288d1"; // Safe blue
-    } else if (colorOrMode === "red" || colorOrMode === "flooded" || colorOrMode === true) {
-      lakeColor = "#e53935"; // Flooded red
-    } else if (typeof colorOrMode === "string" && colorOrMode.startsWith("#")) {
-      lakeColor = colorOrMode;
-    }
-
-    if (mapInstance.getLayer("water")) {
-      mapInstance.setPaintProperty("water", "fill-color", lakeColor);
-    }
-    if (mapInstance.getLayer("fs-real-water-3d")) {
-      mapInstance.setPaintProperty("fs-real-water-3d", "fill-extrusion-color", lakeColor);
-    }
-  } else {
-    if (mapInstance.getLayer("water")) {
-      mapInstance.setPaintProperty("water", "fill-color", OSM_WATER_COLOR);
-    }
-    if (mapInstance.getLayer("fs-real-water-3d")) {
-      mapInstance.setPaintProperty("fs-real-water-3d", "fill-extrusion-color", "#0288d1");
-    }
+  if (mapInstance.getLayer('water')) {
+    mapInstance.setPaintProperty('water', 'fill-color', OSM_WATER_COLOR);
   }
 }
 

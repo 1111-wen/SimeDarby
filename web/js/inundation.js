@@ -11,16 +11,46 @@
 
 export const VULNERABILITY_ZONES = [
   {
+    id: "zone-klang-utama",
+    code: "Klang Utama",
+    name: "Taman Klang Utama Lowland Residential Suburb",
+    shortName: "Taman Klang Utama",
+    category: "residential",
+    coord: [101.4155, 3.0845],
+    polygon: [
+      [101.4080, 3.0910],
+      [101.4230, 3.0910],
+      [101.4230, 3.0780],
+      [101.4080, 3.0780],
+      [101.4080, 3.0910]
+    ],
+    groundElevationM: 3.90,
+    riverFloodThresholdM: 4.25,
+    crestSubmergenceCm: 55,
+    evacTimeMin: 20,
+    icon: "🏡",
+    corridor: "Persiaran Sungai Keramat & Sg. Puloh catchment",
+    safeBypass: "Elevated Persiaran Bukit Raja connector direct to Masjid BBR (PPS)",
+    desc: "Major residential suburb west of BBR. Backwater locks when Sg. Puloh / Sg. Binjai water levels rise."
+  },
+  {
     id: "zone-makyong-dip",
     code: "Area A",
     name: "Jalan Makyong 5A/5B Residential Dips (BBR North)",
     shortName: "Jalan Makyong (Area A)",
     category: "residential",
-    coord: [101.4285, 3.0888], // Heart of Jalan Makyong residential dip (Makyong 5A/6A)
+    coord: [101.4285, 3.0888],
+    polygon: [
+      [101.4240, 3.0915],
+      [101.4335, 3.0915],
+      [101.4335, 3.0860],
+      [101.4240, 3.0860],
+      [101.4240, 3.0915]
+    ],
     groundElevationM: 4.20,
-    riverFloodThresholdM: 4.40, // Late Warning
+    riverFloodThresholdM: 4.40,
     crestSubmergenceCm: 45,
-    evacTimeMin: 20, // Residents need 20 minutes to evacuate to Masjid BBR (PPS)
+    evacTimeMin: 20,
     icon: "🏠",
     corridor: "Jalan Makyong 5A, 5B, 6 & Sg. Puloh culvert intake",
     safeBypass: "Elevated connector road direct to Masjid BBR (PPS)",
@@ -32,11 +62,18 @@ export const VULNERABILITY_ZONES = [
     name: "Taman Kyra & Casira Residential Blocks (BBR West)",
     shortName: "Taman Kyra (Area B)",
     category: "residential",
-    coord: [101.41287, 3.10591], // Exact Taman Kyra residential precinct (Jalan Ulek Mayang 1)
+    coord: [101.41287, 3.10591],
+    polygon: [
+      [101.4075, 3.1085],
+      [101.4180, 3.1085],
+      [101.4180, 3.0990],
+      [101.4075, 3.0990],
+      [101.4075, 3.1085]
+    ],
     groundElevationM: 4.60,
-    riverFloodThresholdM: 4.75, // Higher ground threshold
+    riverFloodThresholdM: 4.75,
     crestSubmergenceCm: 30,
-    evacTimeMin: 20, // Residents need 20 minutes to reach elevated bypass
+    evacTimeMin: 20,
     icon: "🏠",
     corridor: "Persiaran Bukit Raja West & Casira loop",
     safeBypass: "Persiaran Bukit Raja 1 elevated link toward Columbia Asia bypass",
@@ -48,9 +85,16 @@ export const VULNERABILITY_ZONES = [
     name: "Pekan Meru Low-Lying Riverbank & Market Dip",
     shortName: "Pekan Meru Riverbank",
     category: "commercial",
-    coord: [101.4385, 3.1365], // Exact Sg. Binjai bridge crossing & Pekan Meru riverbank (Station 3112401)
+    coord: [101.4385, 3.1365],
+    polygon: [
+      [101.4320, 3.1420],
+      [101.4440, 3.1420],
+      [101.4440, 3.1310],
+      [101.4320, 3.1310],
+      [101.4320, 3.1420]
+    ],
     groundElevationM: 3.80,
-    riverFloodThresholdM: 4.20, // JPS Warning
+    riverFloodThresholdM: 4.20,
     crestSubmergenceCm: 60,
     evacTimeMin: 25,
     icon: "🏛️",
@@ -64,9 +108,16 @@ export const VULNERABILITY_ZONES = [
     name: "Jalan Meru Commercial Junction & BBR Gateway",
     shortName: "Jalan Meru Junction",
     category: "arterial",
-    coord: [101.4395, 3.0970], // Gateway intersection connecting Persiaran Bukit Raja to Federal Route 5 (Jalan Meru)
+    coord: [101.4395, 3.0970],
+    polygon: [
+      [101.4335, 3.1020],
+      [101.4445, 3.1020],
+      [101.4445, 3.0930],
+      [101.4335, 3.0930],
+      [101.4335, 3.1020]
+    ],
     groundElevationM: 4.40,
-    riverFloodThresholdM: 4.50, // JPS Danger
+    riverFloodThresholdM: 4.50,
     crestSubmergenceCm: 50,
     evacTimeMin: 15,
     icon: "🏢",
@@ -80,7 +131,14 @@ export const VULNERABILITY_ZONES = [
     name: "Bandar Bukit Raja Wetland Lake Perimeter",
     shortName: "BBR Wetland Park",
     category: "sponge",
-    coord: [101.41954, 3.09790], // Exact centroid of 125-acre Bandar Bukit Raja Wetland Lake
+    coord: [101.41954, 3.09790],
+    polygon: [
+      [101.4160, 3.1005],
+      [101.4255, 3.0995],
+      [101.4255, 3.0925],
+      [101.4160, 3.0935],
+      [101.4160, 3.1005]
+    ],
     groundElevationM: 4.10,
     riverFloodThresholdM: 4.30,
     crestSubmergenceCm: 35,
@@ -96,9 +154,16 @@ export const VULNERABILITY_ZONES = [
     name: "Persiaran Bukit Raja Spine & Masjid BBR (PPS)",
     shortName: "Masjid BBR (Safe High Ground)",
     category: "safe",
-    coord: [101.42946, 3.08999], // Exact official APM/NADMA PPS relief shelter: Masjid Bandar Bukit Raja
+    coord: [101.42946, 3.08999],
+    polygon: [
+      [101.4270, 3.0910],
+      [101.4320, 3.0910],
+      [101.4320, 3.0888],
+      [101.4270, 3.0888],
+      [101.4270, 3.0910]
+    ],
     groundElevationM: 5.60,
-    riverFloodThresholdM: 6.20, // Extreme 100-year capacity
+    riverFloodThresholdM: 6.20,
     crestSubmergenceCm: 0,
     evacTimeMin: 0,
     icon: "🛡️",
@@ -490,6 +555,8 @@ export function initInundationMarkers(map, onCardClick, actions = {}) {
   actionCallbacks = actions;
   if (!map) return;
 
+  initAreaZoneLayers(map);
+
   // Clear existing
   zoneMarkers.forEach(m => {
     if (m.popup) m.popup.remove();
@@ -602,6 +669,7 @@ export function updateInundationMarkers(scheduleList) {
   });
 
   // Automatically update the Risk Section Widget counts and areas
+  updateAreaZonePolygons(scheduleList, currentSectionFilter);
   renderRiskSectionWidget(scheduleList, currentSectionFilter);
 }
 
@@ -639,6 +707,9 @@ export function renderRiskSectionWidget(scheduleList, activeSection = currentSec
   else if (activeSection === "high") filtered = highRiskList;
   else if (activeSection === "moderate") filtered = moderateList;
   else if (activeSection === "safe") filtered = safeList;
+
+  // Update area polygon highlights according to section
+  updateAreaZonePolygons(scheduleList, activeSection);
 
   // Filter/highlight map pins according to section
   zoneMarkers.forEach(({ zone, el }) => {
@@ -752,5 +823,159 @@ export function initRiskSectionControls() {
       const section = chip.dataset.section;
       renderRiskSectionWidget(currentSchedule, section);
     };
+  });
+}
+
+
+export function initAreaZoneLayers(map) {
+  if (!map) return;
+
+  if (!map.getSource("fs-area-zones")) {
+    map.addSource("fs-area-zones", {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] }
+    });
+  }
+
+  // 1. Polygon Fill Layer with dynamic risk color and opacity
+  if (!map.getLayer("fs-area-zones-fill")) {
+    const beforeLayer = map.getLayer("fs-roads-risk") ? "fs-roads-risk" : undefined;
+    map.addLayer({
+      id: "fs-area-zones-fill",
+      type: "fill",
+      source: "fs-area-zones",
+      paint: {
+        "fill-color": ["coalesce", ["get", "fillColor"], "#22c55e"],
+        "fill-opacity": ["coalesce", ["get", "fillOpacity"], 0.20]
+      }
+    }, beforeLayer);
+  }
+
+  // 2. Polygon Outline Line Layer
+  if (!map.getLayer("fs-area-zones-line")) {
+    const beforeLayer = map.getLayer("fs-roads-risk") ? "fs-roads-risk" : undefined;
+    map.addLayer({
+      id: "fs-area-zones-line",
+      type: "line",
+      source: "fs-area-zones",
+      paint: {
+        "line-color": ["coalesce", ["get", "lineColor"], "#15803d"],
+        "line-width": 2.5,
+        "line-dasharray": [2.5, 1.5],
+        "line-opacity": 0.85
+      }
+    }, beforeLayer);
+  }
+
+  // 3. Centered Area Name Label Layer
+  if (!map.getLayer("fs-area-zones-label")) {
+    map.addLayer({
+      id: "fs-area-zones-label",
+      type: "symbol",
+      source: "fs-area-zones",
+      layout: {
+        "text-field": ["get", "shortName"],
+        "text-size": 11.5,
+        "text-font": ["Noto Sans Bold"],
+        "text-anchor": "center",
+        "text-allow-overlap": false
+      },
+      paint: {
+        "text-color": ["coalesce", ["get", "textColor"], "#1e293b"],
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 2
+      }
+    });
+  }
+
+  // Click on area polygon to open popup & zoom
+  map.on("click", "fs-area-zones-fill", e => {
+    if (e.features && e.features[0]) {
+      const zoneId = e.features[0].properties.id;
+      if (zoneId) openZonePopup(zoneId);
+    }
+  });
+
+  map.on("mouseenter", "fs-area-zones-fill", () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", "fs-area-zones-fill", () => {
+    map.getCanvas().style.cursor = "";
+  });
+}
+
+export function updateAreaZonePolygons(scheduleList, activeSection = "all") {
+  if (!mapInstance || !mapInstance.getSource("fs-area-zones")) return;
+
+  const mapByZoneId = new Map((scheduleList || []).map(s => [s.id, s]));
+
+  const features = VULNERABILITY_ZONES.filter(z => z.polygon).map(zone => {
+    const data = mapByZoneId.get(zone.id) || { status: "SAFE", depthCm: 0, timeText: "Safe" };
+
+    let fillColor = "#22c55e"; // Safe emerald green
+    let fillOpacity = 0.18;
+    let lineColor = "#16a34a";
+    let textColor = "#15803d";
+    let statusLabel = "Safe";
+
+    if (data.status === "CURRENT_FLOOD") {
+      fillColor = "#ef4444"; // Red
+      fillOpacity = 0.46; // Strong opacity for active flood
+      lineColor = "#b91c1c";
+      textColor = "#991b1b";
+      statusLabel = `Flooded (${data.depthCm}cm)`;
+    } else if (data.status === "PREDICTED_FLOOD" || (data.willFlood && data.spareTimeMin <= 15)) {
+      fillColor = "#ea580c"; // High risk orange-red
+      fillOpacity = 0.38;
+      lineColor = "#c2410c";
+      textColor = "#c2410c";
+      statusLabel = `High Risk (${data.timeText})`;
+    } else if (data.status === "WARNING") {
+      fillColor = "#f59e0b"; // Moderate risk amber
+      fillOpacity = 0.28;
+      lineColor = "#d97706";
+      textColor = "#b45309";
+      statusLabel = `Moderate (${data.depthCm}cm)`;
+    }
+
+    // If a specific section is active in the filter, dim non-matching polygons
+    if (activeSection !== "all") {
+      const matchesSection = 
+        (activeSection === "flooded" && data.status === "CURRENT_FLOOD") ||
+        (activeSection === "high" && (data.status === "PREDICTED_FLOOD" || (data.willFlood && data.spareTimeMin <= 15))) ||
+        (activeSection === "moderate" && data.status === "WARNING") ||
+        (activeSection === "safe" && data.status === "SAFE");
+
+      if (matchesSection) {
+        fillOpacity = Math.min(0.60, fillOpacity + 0.12);
+      } else {
+        fillOpacity = 0.06;
+      }
+    }
+
+    return {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [zone.polygon]
+      },
+      properties: {
+        id: zone.id,
+        name: zone.name,
+        shortName: zone.shortName,
+        status: data.status,
+        statusLabel,
+        depthCm: data.depthCm || 0,
+        fillColor,
+        fillOpacity,
+        lineColor,
+        textColor
+      }
+    };
+  });
+
+  mapInstance.getSource("fs-area-zones").setData({
+    type: "FeatureCollection",
+    features
   });
 }
