@@ -404,69 +404,200 @@ export function renderAreaScheduleHtml(scheduleList) {
   `;
 }
 
-// Map markers for vulnerability zones
+// Map markers for vulnerability zones (Teardrop Pin & Map-Locked Popup like Shelter/Bomba/Hospital)
 let zoneMarkers = [];
 let mapInstance = null;
+let currentSchedule = [];
+let actionCallbacks = {};
 
-export function initInundationMarkers(map, onCardClick) {
+function buildPopupHtml(zone, data) {
+  const status = data ? data.status : (zone.category === "safe" ? "SAFE" : "SAFE");
+  const isDanger = status === "CURRENT_FLOOD" || status === "PREDICTED_FLOOD";
+  const isWarning = status === "WARNING";
+  
+  const badgeTitle = status === "CURRENT_FLOOD" 
+    ? `🌊 Submerged (${data.depthCm}cm) • Flooded`
+    : status === "PREDICTED_FLOOD"
+    ? `🔮 Flood Inbound (${data.timeText})`
+    : status === "WARNING"
+    ? `⚠️ Surface Ponding (${data.depthCm}cm)`
+    : `✅ Safe & Dry`;
+
+  const timeText = data ? data.timeText : "Dry & Safe";
+  const depthText = data && data.depthCm > 0 ? `${data.depthCm} cm road inundation` : "Dry road surface";
+  const spareText = data ? (data.spareTimeMin <= 0 ? "0 mins (Route Submerged!)" : `${data.spareTimeMin} mins spare window`) : "Normal escape window";
+  const actionText = data ? data.actionText : (zone.category === "safe" ? "Designated Official PPS Evacuation Centre" : "Road fully passable");
+
+  return `
+    <div class="emerg-popup-head" style="background:${isDanger ? '#fee2e2' : isWarning ? '#fef3c7' : '#dcfce7'}; border-bottom:1.5px solid ${isDanger ? '#fca5a5' : isWarning ? '#fcd34d' : '#86efac'}; padding:8px 10px; border-radius:8px 8px 0 0;">
+      <span class="emerg-popup-cat-badge" style="font-weight:800; font-size:11px; color:${isDanger ? '#991b1b' : isWarning ? '#92400e' : '#166534'};">${zone.icon} ${badgeTitle}</span>
+      <h4 class="emerg-popup-title" style="margin:4px 0 0; font-size:13.5px; color:#0f172a; font-weight:800;">${zone.name}</h4>
+    </div>
+    <div class="emerg-popup-body" style="padding:10px 12px; font-size:12px; line-height:1.45;">
+      <div style="margin-bottom:4px;"><strong>📍 Corridor:</strong> ${zone.corridor}</div>
+      <div style="margin-bottom:4px;"><strong>⏱️ Timing:</strong> ${timeText}</div>
+      <div style="margin-bottom:4px;"><strong>🌊 Depth:</strong> ${depthText}</div>
+      <div style="margin-bottom:4px;"><strong>📐 Elevation:</strong> Ground: ${zone.groundElevationM.toFixed(1)}m | Trigger: ${zone.riverFloodThresholdM.toFixed(1)}m</div>
+      <div style="margin-bottom:4px;"><strong>🏃 Evacuation:</strong> ${spareText} (Needs ${zone.evacTimeMin}m to PPS)</div>
+      <div style="margin-bottom:8px; font-size:11px; color:#475569;"><strong>🛡️ Safe Bypass:</strong> ${zone.safeBypass}</div>
+      <div class="emerg-popup-actions" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        ${zone.category !== "safe" ? `<button type="button" class="emerg-action-btn btn-evac" style="background:#5B3CC4; color:#ffffff; font-weight:700; padding:6px 10px; border-radius:8px; border:none; cursor:pointer;">🚗 Evacuate to Masjid BBR (PPS)</button>` : ''}
+        <div style="display:flex; gap:6px;">
+          <button type="button" class="emerg-action-btn btn-to" style="flex:1;">📍 Route Here</button>
+          <button type="button" class="emerg-action-btn btn-from" style="flex:1;">🚩 Start Here</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function bindPopupActions(container, zone, popup) {
+  const btnEvac = container.querySelector(".btn-evac");
+  const btnTo = container.querySelector(".btn-to");
+  const btnFrom = container.querySelector(".btn-from");
+
+  if (btnEvac) {
+    btnEvac.onclick = (e) => {
+      e.stopPropagation();
+      if (actionCallbacks.evacuateFrom) {
+        actionCallbacks.evacuateFrom(zone);
+      }
+      popup.remove();
+    };
+  }
+  if (btnTo) {
+    btnTo.onclick = (e) => {
+      e.stopPropagation();
+      if (actionCallbacks.setTo) {
+        actionCallbacks.setTo({ name: zone.shortName, coord: zone.coord });
+      }
+      popup.remove();
+    };
+  }
+  if (btnFrom) {
+    btnFrom.onclick = (e) => {
+      e.stopPropagation();
+      if (actionCallbacks.setFrom) {
+        actionCallbacks.setFrom({ name: zone.shortName, coord: zone.coord });
+      }
+      popup.remove();
+    };
+  }
+}
+
+export function initInundationMarkers(map, onCardClick, actions = {}) {
   mapInstance = map;
+  actionCallbacks = actions;
   if (!map) return;
 
   // Clear existing
-  zoneMarkers.forEach(m => m.remove());
+  zoneMarkers.forEach(m => {
+    if (m.popup) m.popup.remove();
+    m.marker.remove();
+  });
   zoneMarkers = [];
 
   VULNERABILITY_ZONES.forEach(zone => {
     const el = document.createElement("div");
-    el.className = "inundation-map-marker marker-safe";
+    el.className = "inundation-zone-marker status-safe";
     el.id = `marker-${zone.id}`;
-    el.innerHTML = `
-      <div class="marker-bubble">
-        <span class="m-icon">${zone.icon}</span>
-        <span class="m-label">${zone.shortName}</span>
-      </div>
-      <div class="marker-pin-dot"></div>
-      <div class="marker-pulse"></div>
-    `;
+    el.dataset.zoneId = zone.id;
 
-    el.addEventListener("click", e => {
-      e.stopPropagation();
-      map.easeTo({ center: zone.coord, zoom: 15.5 });
+    const container = document.createElement("div");
+    container.className = "inundation-marker-container";
+
+    const pin = document.createElement("div");
+    pin.className = "inundation-pin";
+    const icon = document.createElement("span");
+    icon.className = "inundation-icon";
+    icon.textContent = zone.icon;
+    pin.appendChild(icon);
+
+    const badge = document.createElement("div");
+    badge.className = "inundation-badge";
+    const dot = document.createElement("span");
+    dot.className = "inundation-status-dot";
+    const badgeText = document.createElement("span");
+    badgeText.className = "inundation-badge-text";
+    badgeText.textContent = zone.shortName;
+    badge.appendChild(dot);
+    badge.appendChild(badgeText);
+
+    container.appendChild(pin);
+    container.appendChild(badge);
+    el.appendChild(container);
+
+    const popupContent = document.createElement("div");
+    popupContent.className = "emerg-popup inundation-popup";
+    popupContent.id = `popup-content-${zone.id}`;
+    popupContent.innerHTML = buildPopupHtml(zone, null);
+
+    const popup = new maplibregl.Popup({ offset: [0, -36], closeButton: true, maxWidth: "330px" })
+      .setDOMContent(popupContent);
+
+    popup.on("open", () => {
+      bindPopupActions(popupContent, zone, popup);
+    });
+
+    const marker = new maplibregl.Marker({ element: el, anchor: "bottom" })
+      .setLngLat(zone.coord)
+      .setPopup(popup)
+      .addTo(map);
+
+    el.addEventListener("click", () => {
       if (onCardClick) onCardClick(zone);
     });
 
-    const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
-      .setLngLat(zone.coord)
-      .addTo(map);
-
-    zoneMarkers.push({ zone, marker: m, el });
+    zoneMarkers.push({ zone, marker, popup, el, popupContent });
   });
+}
+
+export function openZonePopup(zoneId) {
+  const item = zoneMarkers.find(m => m.zone.id === zoneId);
+  if (item && mapInstance) {
+    mapInstance.easeTo({ center: item.zone.coord, zoom: 15.5 });
+    if (item.popup) {
+      item.popup.addTo(mapInstance);
+    }
+  }
 }
 
 export function updateInundationMarkers(scheduleList) {
   if (!zoneMarkers || zoneMarkers.length === 0) return;
+  currentSchedule = scheduleList;
 
   const mapByZoneId = new Map(scheduleList.map(s => [s.id, s]));
 
-  zoneMarkers.forEach(({ zone, el }) => {
+  zoneMarkers.forEach(({ zone, el, popupContent, popup }) => {
     const data = mapByZoneId.get(zone.id);
     if (!data) return;
 
-    el.className = "inundation-map-marker";
-    const labelSpan = el.querySelector(".m-label");
-
-    if (data.status === "CURRENT_FLOOD") {
-      el.classList.add("marker-danger", "marker-flooded");
-      if (labelSpan) labelSpan.textContent = `${data.shortName} (Flooded ${data.depthCm}cm)`;
-    } else if (data.status === "PREDICTED_FLOOD") {
-      el.classList.add("marker-danger", "marker-predicting");
-      if (labelSpan) labelSpan.textContent = `${data.shortName} (Floods in ${data.timeUntilFloodMin}m &bull; ${data.spareTimeMin}m spare)`;
+    // 1. Update pin status class
+    el.classList.remove("status-danger", "status-warning", "status-safe");
+    if (data.status === "CURRENT_FLOOD" || data.status === "PREDICTED_FLOOD") {
+      el.classList.add("status-danger");
     } else if (data.status === "WARNING") {
-      el.classList.add("marker-warning");
-      if (labelSpan) labelSpan.textContent = `${data.shortName} (Ponding ${data.depthCm}cm)`;
+      el.classList.add("status-warning");
     } else {
-      el.classList.add("marker-safe");
-      if (labelSpan) labelSpan.textContent = data.category === "safe" ? `${data.shortName} (Safe)` : data.shortName;
+      el.classList.add("status-safe");
+    }
+
+    // 2. Update badge text
+    const badgeText = el.querySelector(".inundation-badge-text");
+    if (badgeText) {
+      if (data.status === "CURRENT_FLOOD") {
+        badgeText.textContent = `${zone.shortName} (${data.depthCm}cm)`;
+      } else if (data.status === "PREDICTED_FLOOD") {
+        badgeText.textContent = `${zone.shortName} (${data.timeUntilFloodMin}m)`;
+      } else {
+        badgeText.textContent = zone.shortName;
+      }
+    }
+
+    // 3. Update popup DOM content
+    if (popupContent) {
+      popupContent.innerHTML = buildPopupHtml(zone, data);
+      bindPopupActions(popupContent, zone, popup);
     }
   });
 }

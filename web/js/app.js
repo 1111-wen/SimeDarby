@@ -5,7 +5,7 @@ import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps,
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
 import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, setSponge3DMode, setPredictLakeHighlight, getTownshipSpongeSummary, filterSpongeCategory } from "./sponge.js";
-import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, initInundationMarkers, updateInundationMarkers, VULNERABILITY_ZONES } from "./inundation.js";
+import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, initInundationMarkers, updateInundationMarkers, openZonePopup, VULNERABILITY_ZONES } from "./inundation.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -451,9 +451,21 @@ async function loadData() {
   // Render emergency markers on the map
   renderEmergencyMarkers();
 
-  // Initialize Inundation Vulnerability Zone markers
+  // Initialize Inundation Vulnerability Zone markers (matching shelter/bomba/hospital pin & popup)
   initInundationMarkers(map, zone => {
-    toast(`📍 ${zone.name}: Ground Elev ${zone.groundElevationM}m &bull; ${zone.desc}`);
+    toast(`📍 ${zone.name}: Ground Elev ${zone.groundElevationM}m • ${zone.desc}`);
+  }, {
+    setFrom: p => setFrom(p, true),
+    setTo: p => setTo(p, true),
+    evacuateFrom: zone => {
+      const pps = state.places.find(p => p.type === "relief_centre" || (p.name && p.name.includes("Masjid"))) || {
+        name: "Masjid Bandar Bukit Raja (relief centre)",
+        coord: [101.42946, 3.08999]
+      };
+      setFrom({ name: zone.shortName, coord: zone.coord }, false);
+      setTo(pps, true);
+      toast(`🚗 Routing safe evacuation: ${zone.shortName} ➔ Masjid BBR (PPS)`);
+    }
   });
 
   const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
@@ -1109,22 +1121,14 @@ function bindAreaCardClicks(container) {
   if (!container) return;
   container.querySelectorAll(".area-sched-card").forEach(card => {
     card.addEventListener("click", () => {
-      const lat = parseFloat(card.dataset.lat);
-      const lng = parseFloat(card.dataset.lng);
-      if (!isNaN(lat) && !isNaN(lng)) {
-        map.easeTo({ center: [lng, lat], zoom: 15.5 });
-        const zoneId = card.dataset.zoneId;
-        const markerEl = document.getElementById(`marker-${zoneId}`);
-        if (markerEl) {
-          const bubble = markerEl.querySelector(".marker-bubble");
-          if (bubble) {
-            bubble.style.transform = "scale(1.28)";
-            markerEl.style.zIndex = "999";
-            setTimeout(() => {
-              bubble.style.transform = "";
-              markerEl.style.zIndex = "";
-            }, 1500);
-          }
+      const zoneId = card.dataset.zoneId;
+      if (zoneId) {
+        openZonePopup(zoneId);
+      } else {
+        const lat = parseFloat(card.dataset.lat);
+        const lng = parseFloat(card.dataset.lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          map.easeTo({ center: [lng, lat], zoom: 15.5 });
         }
       }
     });
