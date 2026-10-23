@@ -12,7 +12,7 @@ let currentSelectedZoneId = "zone-klang-utama";
 let onReportSubmittedCallback = null;
 
 function getContainer() {
-  return modalContainer || document.getElementById("reportModalSlot") || document.getElementById("reportFloodModal");
+  return document.getElementById("reportModalSlot") || modalContainer || document.getElementById("reportFloodModal");
 }
 
 export function initReportModal(containerEl, onReportSuccess) {
@@ -23,8 +23,16 @@ export function initReportModal(containerEl, onReportSuccess) {
 
 export function openReportModal(preselectedZoneId = "zone-klang-utama") {
   const backdrop = document.getElementById("reportModalBackdrop");
+  const modal = document.getElementById("reportFloodModal");
   const slot = document.getElementById("reportModalSlot");
-  modalContainer = slot || backdrop;
+
+  if (modal) {
+    modal.removeAttribute("hidden");
+    modal.hidden = false;
+    modal.style.display = "flex";
+  }
+
+  modalContainer = slot || modal || backdrop;
   currentSelectedZoneId = preselectedZoneId;
   currentUploadedPhotoData = SAMPLE_FLOOD_PHOTOS.moderate;
   renderReportForm(preselectedZoneId);
@@ -41,10 +49,16 @@ export function openReportModal(preselectedZoneId = "zone-klang-utama") {
 
 export function closeReportModal() {
   const backdrop = document.getElementById("reportModalBackdrop");
+  const modal = document.getElementById("reportFloodModal");
   if (backdrop) {
     backdrop.setAttribute("hidden", "");
     backdrop.hidden = true;
     backdrop.style.display = "none";
+  }
+  if (modal) {
+    modal.removeAttribute("hidden");
+    modal.hidden = false;
+    modal.style.display = "flex";
   }
   const reportBtn = document.getElementById("reportBtn");
   if (reportBtn) reportBtn.setAttribute("aria-pressed", "false");

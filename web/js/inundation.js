@@ -1637,11 +1637,17 @@ export function initRiskSectionControls(onOpenCallback) {
       predictPopup.style.display = "none";
     }
     if (predictBtn) predictBtn.setAttribute("aria-pressed", "false");
+    const reportBackdrop = document.getElementById("reportModalBackdrop");
     const reportModal = document.getElementById("reportFloodModal");
     const reportBtn = document.getElementById("reportBtn");
+    if (reportBackdrop) {
+      reportBackdrop.hidden = true;
+      reportBackdrop.style.display = "none";
+    }
     if (reportModal) {
-      reportModal.hidden = true;
-      reportModal.style.display = "none";
+      reportModal.removeAttribute("hidden");
+      reportModal.hidden = false;
+      reportModal.style.display = "flex";
     }
     if (reportBtn) reportBtn.setAttribute("aria-pressed", "false");
     if (onOpenCallback) onOpenCallback();

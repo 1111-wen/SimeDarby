@@ -2149,6 +2149,12 @@ details p { margin: 6px 0; }
   max-height: 88vh;
   box-sizing: border-box;
   overflow-y: auto;
+  position: relative;
+  z-index: 1001;
+}
+
+#reportModalSlot, #sosModalSlot, #roleModalSlot, .report-modal-content {
+  width: 100%;
 }
 
 @keyframes popInModal {
