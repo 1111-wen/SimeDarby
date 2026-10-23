@@ -53,6 +53,91 @@ def classify_jps_threshold(level_m):
     else:
         return "DANGER"
 
+def compute_area_inundation_schedule(current_wl, predicted_wl):
+    rate = (predicted_wl - current_wl) / 3.0
+    zones = [
+        {
+            "id": "zone-meru-riverbank",
+            "name": "Pekan Meru Riverbank & Market Dip",
+            "ground_elevation_m": 3.80,
+            "flood_threshold_m": 4.20,
+            "max_submergence_cm": 60,
+            "safe_bypass": "Persiaran Bukit Raja 1 / Jalan Haji Abdul Manan elevated bypass"
+        },
+        {
+            "id": "zone-makyong-dip",
+            "name": "Jalan Makyong 5A/5B Residential Dips (BBR North)",
+            "ground_elevation_m": 4.20,
+            "flood_threshold_m": 4.40,
+            "max_submergence_cm": 45,
+            "safe_bypass": "Elevated southern connector road toward Masjid BBR (PPS)"
+        },
+        {
+            "id": "zone-meru-junction",
+            "name": "Jalan Meru Commercial Junction & BBR Gateway",
+            "ground_elevation_m": 4.40,
+            "flood_threshold_m": 4.50,
+            "max_submergence_cm": 50,
+            "safe_bypass": "NKVE Highway elevated slip road & Persiaran Mokhtar Dahari"
+        },
+        {
+            "id": "zone-wetland-perimeter",
+            "name": "Bandar Bukit Raja Wetland Lake Perimeter",
+            "ground_elevation_m": 4.10,
+            "flood_threshold_m": 4.30,
+            "max_submergence_cm": 35,
+            "safe_bypass": "Upper perimeter bund and elevated town park boardwalk"
+        },
+        {
+            "id": "zone-safe-highground",
+            "name": "Persiaran Bukit Raja Spine & Masjid BBR (PPS)",
+            "ground_elevation_m": 5.60,
+            "flood_threshold_m": 6.20,
+            "max_submergence_cm": 0,
+            "safe_bypass": "Primary designated official APM/NADMA evacuation shelter"
+        }
+    ]
+
+    schedule = []
+    for z in zones:
+        thresh = z["flood_threshold_m"]
+        elev = z["ground_elevation_m"]
+
+        if z["max_submergence_cm"] == 0:
+            status = "SAFE"
+            time_text = "Immune to Flood (Always Dry High Ground)"
+            depth_cm = 0
+        elif current_wl >= thresh:
+            status = "CURRENT_FLOOD"
+            depth_cm = min(z["max_submergence_cm"], max(15, int((current_wl - elev) * 100)))
+            time_text = "Currently Submerged (Active Crest)"
+        elif predicted_wl >= thresh and rate > 0.01:
+            status = "PREDICTED_FLOOD"
+            rise_needed = thresh - current_wl
+            mins = max(5, min(180, int((rise_needed / rate) * 60)))
+            depth_cm = min(z["max_submergence_cm"], max(10, int((predicted_wl - elev) * 100)))
+            time_text = f"Predicted to Flood in {mins} mins"
+        elif predicted_wl >= (thresh - 0.20) or current_wl >= (thresh - 0.20):
+            status = "MODERATE_RISK"
+            depth_cm = 15
+            time_text = "Shallow Gutter Ponding (~10-15cm)"
+        else:
+            status = "SAFE"
+            depth_cm = 0
+            time_text = "Safe & Dry (No flood expected)"
+
+        schedule.append({
+            "id": z["id"],
+            "name": z["name"],
+            "ground_elevation_m": elev,
+            "flood_threshold_m": thresh,
+            "status": status,
+            "flood_depth_cm": depth_cm,
+            "flood_timing": time_text,
+            "safe_bypass_route": z["safe_bypass"]
+        })
+    return schedule
+
 def predict_water_level(binjai_lvl, binjai_rn, rasau_lvl, klang_lvl, cum_rain_3h=None):
     """
     Predict water level 3 hours ahead.
@@ -164,15 +249,22 @@ def health_check():
         }
     })
 
-@app.route("/predict", methods=["GET"])
+@app.route("/predict", methods=["GET", "POST"])
 def predict_endpoint():
     try:
-        # Parse query parameters with sensible real-world defaults (normal conditions)
-        binjai_lvl = float(request.args.get("binjai_level", 2.10))
-        binjai_rn = float(request.args.get("binjai_rain", 0.0))
-        rasau_lvl = float(request.args.get("rasau_level", 2.05))
-        klang_lvl = float(request.args.get("klang_level", 1.90))
-        cum_rain_3h = float(request.args.get("cum_rain_3h", binjai_rn * 2.0))
+        # Support both GET query parameters and POST JSON payloads
+        data = request.get_json(silent=True) or {}
+        
+        def get_val(key, default):
+            if key in data:
+                return float(data[key])
+            return float(request.args.get(key, default))
+
+        binjai_lvl = get_val("binjai_level", 2.10)
+        binjai_rn = get_val("binjai_rain", 0.0)
+        rasau_lvl = get_val("rasau_level", 2.05)
+        klang_lvl = get_val("klang_level", 1.90)
+        cum_rain_3h = get_val("cum_rain_3h", binjai_rn * 2.0)
 
         predicted_lvl, source = predict_water_level(binjai_lvl, binjai_rn, rasau_lvl, klang_lvl, cum_rain_3h)
         category = classify_jps_threshold(predicted_lvl)
@@ -218,6 +310,7 @@ def predict_endpoint():
             "applicable_official_threshold_category": category,
             "sponge_retention_pct": retention_pct,
             "model_source": source,
+            "area_inundation_schedule": compute_area_inundation_schedule(binjai_lvl, predicted_lvl),
             "jps_thresholds": {
                 "normal": "< 3.50m",
                 "alert": "3.50m - 4.19m",

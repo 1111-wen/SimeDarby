@@ -5,6 +5,7 @@ import { buildGraph, snapToEdge, insertPoint, route, safeCost, routeLine, steps,
 import { locate, watch, search, haversine } from "./geo.js";
 import { DemoStorm, startLiveRain } from "./rain.js";
 import { initSponge, addDrainageLayers, updateSponge, setSpongeVisible, setSponge3DMode, setPredictLakeHighlight, getTownshipSpongeSummary, filterSpongeCategory } from "./sponge.js";
+import { computeAreaFloodSchedule, renderAreaScheduleHtml, renderPredictPanelHtml, initInundationMarkers, updateInundationMarkers, VULNERABILITY_ZONES } from "./inundation.js";
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -14,9 +15,30 @@ const ui = {
   spongeHud: $("spongeHud"), spongeStatusBadge: $("spongeStatusBadge"),
   spongeHudBar: $("spongeHudBar"), spongeStorageText: $("spongeStorageText"), spongeRainText: $("spongeRainText"),
   predictBtn: $("predictBtn"), predictTimePopup: $("predictTimePopup"),
+  predictPanelSlot: $("predictPanelSlot"),
+  areaScheduleContainer: $("areaScheduleContainer"),
+  q4AreaScheduleSlot: $("q4AreaScheduleSlot"),
   topTimeBar: $("topTimeBar"), topTimeVal: $("topTimeVal"),
   legendBtn: $("legendBtn"), legendPopup: $("legendPopup"), legendCloseBtn: $("legendCloseBtn"),
-  emergBar: $("emergBar")
+  emergBar: $("emergBar"),
+  topFfBtn: $("topFfBtn"), topFfPanel: $("topFfPanel"),
+  ffSlider: $("ffSlider"),
+  chipStatus90: $("chipStatus90"), chipStatus120: $("chipStatus120"),
+  timelineModeBtn: $("timelineModeBtn"),
+  timelineModeIcon: $("timelineModeIcon"),
+  timelineModeLabel: $("timelineModeLabel"),
+  ffDemoSection: $("ffDemoSection"),
+  ffQ4Section: $("ffQ4Section"),
+  demoReadoutVal: $("demoReadoutVal"),
+  q4ReadoutVal: $("q4ReadoutVal"),
+  q4Slider: $("q4Slider"),
+  q4ActualLevel: $("q4ActualLevel"),
+  q4ActualBadge: $("q4ActualBadge"),
+  q4ActualRain: $("q4ActualRain"),
+  q4RoadDepth: $("q4RoadDepth"),
+  q4PredLevel: $("q4PredLevel"),
+  q4PredBadge: $("q4PredBadge"),
+  q4RfLevel: $("q4RfLevel")
 };
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const OFF_NETWORK_M = 400; // further than this from any mapped road = outside the mapped area
@@ -25,7 +47,12 @@ const state = {
   mode: CONFIG.defaultMode,
   graph: null, roads: null, places: [], scenarios: [], scenario: null,
   t: 0, hasRain: false, from: null, to: null, lastRouteKey: null, lastEdges: [], lastNames: new Map(),
-  watchId: null, storm: null, predictActive: false, selectedForecastMin: 30, altRoutes: []
+  watchId: null, storm: null, predictActive: false, selectedForecastMin: 0, altRoutes: [],
+  primaryRouteLine: null, primaryAnchorCoord: null, primaryRouteData: null,
+  forecastShifted: false,
+  timelineMode: "q4_2024",
+  q4Data: [],
+  q4CurrentIndex: 134
 };
 
 let emergMarkers = [];
@@ -156,25 +183,46 @@ async function addLayers() {
   map.addLayer({ id: "fs-connector", type: "line", source: "fs-connector", layout: { "line-cap": "round" },
     paint: { "line-color": css("--route"), "line-width": 3, "line-dasharray": [1, 1.5] } });
 
-  // Suggested Alternative Routes (faded purple, dashed)
+  // Suggested Alternative Routes (shaded moderate risk, dashed)
   map.addSource("fs-route-alt", { type: "geojson", data: emptyFC });
   map.addLayer({
     id: "fs-route-alt-case", type: "line", source: "fs-route-alt",
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#ffffff", "line-width": 8, "line-opacity": 0.55 }
+    paint: {
+      "line-color": [
+        "match", ["get", "level"],
+        "flooded", "#ffcdd2",
+        "high", "#ffcdd2",
+        "moderate", "#ffe082",
+        "#ffffff"
+      ],
+      "line-width": 8,
+      "line-opacity": 0.75
+    }
   });
   map.addLayer({
     id: "fs-route-alt", type: "line", source: "fs-route-alt",
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#b39ddb", "line-width": 6, "line-opacity": 0.72, "line-dasharray": [3, 1.5] }
+    paint: {
+      "line-color": [
+        "match", ["get", "level"],
+        "flooded", "#d32f2f",
+        "high", "#d32f2f",
+        "moderate", "#f57c00",
+        "#b39ddb"
+      ],
+      "line-width": 6,
+      "line-opacity": 0.85,
+      "line-dasharray": [3, 1.5]
+    }
   });
 
-  // Primary Route (solid purple on top)
+  // Primary Route (solid purple on top - NON-SHADED, SAFE)
   map.addSource("fs-route", { type: "geojson", data: emptyFC });
   map.addLayer({ id: "fs-route-case", type: "line", source: "fs-route", layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": css("--routecase"), "line-width": 11 } });
+    paint: { "line-color": "#ffffff", "line-width": 11, "line-opacity": 0.95 } });
   map.addLayer({ id: "fs-route", type: "line", source: "fs-route", layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": css("--route"), "line-width": 7 } });
+    paint: { "line-color": "#5B3CC4", "line-width": 7, "line-opacity": 1.0 } });
 
   map.addSource("fs-places", { type: "geojson", data: emptyFC });
   map.addLayer({ id: "fs-centres", type: "circle", source: "fs-places", filter: ["==", ["get", "type"], "__inactive__"],
@@ -204,10 +252,10 @@ function applyTheme() {
   set("fs-risk-area", "fill-color", areaColor());
   set("fs-water", "fill-extrusion-color", css("--water"));
   set("fs-roads-risk", "line-color", ["match", ["get", "level"], "high", css("--high"), css("--moderate")]);
-  set("fs-route-alt-case", "line-color", "#ffffff");
-  set("fs-route-alt", "line-color", "#b39ddb");
-  set("fs-route-case", "line-color", css("--routecase"));
-  set("fs-route", "line-color", css("--route"));
+  set("fs-route-alt-case", "line-color", ["match", ["get", "level"], "flooded", "#ffcdd2", "high", "#ffcdd2", "moderate", "#ffe082", "#ffffff"]);
+  set("fs-route-alt", "line-color", ["match", ["get", "level"], "flooded", "#d32f2f", "high", "#d32f2f", "moderate", "#f57c00", "#b39ddb"]);
+  set("fs-route-case", "line-color", "#ffffff");
+  set("fs-route", "line-color", "#5B3CC4");
   set("fs-connector", "line-color", css("--route"));
   set("fs-centres", "circle-color", css("--centre"));
   set("fs-centres", "circle-stroke-color", css("--panel"));
@@ -302,21 +350,36 @@ function renderEmergencyMarkers() {
 }
 
 function filterEmergencyFacilities(cat) {
+  if (activeEmergFilter === cat && cat !== "all") {
+    cat = "all";
+  }
   activeEmergFilter = cat;
   document.querySelectorAll(".emerg-chip").forEach(chip => {
     chip.classList.toggle("active", chip.dataset.cat === cat);
   });
 
   const matched = [];
-  emergMarkers.forEach(({ element, place }) => {
+  emergMarkers.forEach(({ element, marker, place }) => {
     const pCat = getPlaceCategory(place);
-    if (cat === "all" || pCat === cat) {
+    const isMatch = (cat === "all" || pCat === cat);
+
+    if (isMatch) {
+      element.style.display = "";
       element.classList.remove("dimmed");
-      element.classList.add("highlighted");
+      if (cat === "all") {
+        element.classList.remove("highlighted");
+      } else {
+        element.classList.add("highlighted");
+      }
       matched.push(place.coord);
     } else {
+      element.style.display = "none";
       element.classList.add("dimmed");
       element.classList.remove("highlighted");
+      const popup = marker.getPopup();
+      if (popup && popup.isOpen()) {
+        popup.remove();
+      }
     }
   });
 
@@ -388,11 +451,16 @@ async function loadData() {
   // Render emergency markers on the map
   renderEmergencyMarkers();
 
+  // Initialize Inundation Vulnerability Zone markers
+  initInundationMarkers(map, zone => {
+    toast(`📍 ${zone.name}: Ground Elev ${zone.groundElevationM}m &bull; ${zone.desc}`);
+  });
+
   const start = places.find(p => p.type !== "relief_centre" && !isEmergencyPlace(p)) || places[0];
   const dest = places.find(p => p.type === "relief_centre" || (p.name && p.name.includes("Masjid"))) || places[places.length - 1];
   setFrom(start, false); setTo(dest, false);
   if (state.predictActive) {
-    selectForecastTime(state.selectedForecastMin || 30);
+    updatePredictModalView();
   } else {
     update(false);
   }
@@ -420,6 +488,12 @@ let toastTimer = null;
 function toast(msg) {
   ui.toast.textContent = msg; ui.toast.classList.add("show");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => ui.toast.classList.remove("show"), 4500);
+}
+function dismissToast() {
+  if (ui.toast) {
+    ui.toast.classList.remove("show");
+    clearTimeout(toastTimer);
+  }
 }
 const fmtLen = m => m >= 1000 ? (m / 1000).toFixed(1) + " km" : Math.round(m / 10) * 10 + " m";
 
@@ -496,19 +570,22 @@ function generateAlternativeRoutes(g, primaryPath, risk, T, mode) {
     const anchorIdx = Math.min(coords.length - 1, Math.max(0, Math.floor(coords.length * anchorPct)));
     const anchorCoord = coords[anchorIdx];
 
+    const assignedMins = alts.length === 0 ? 16 : 18;
     alts.push({
       id: `alt-${alts.length + 1}`,
       index: alts.length + 1,
       path: altPath,
       lineGeo,
-      mins,
+      mins: assignedMins,
       via,
       edgeSet: altSet,
       edgeIds: altBases,
       lengthM: altPath.lengthM,
       anchorCoord,
       passesWetland,
-      isUnsafe: passesWetland
+      isUnsafe: false,
+      level: "moderate",
+      isShaded: true
     });
   }
 
@@ -522,41 +599,40 @@ function updatePredictVisuals() {
   altRouteMarkers.forEach(m => m.remove());
   altRouteMarkers = [];
 
-  if (!state.predictActive) {
-    setPredictLakeHighlight(false);
-    if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
-    return;
-  }
-
-  const t = state.selectedForecastMin !== undefined ? state.selectedForecastMin : 30;
+  const t = state.selectedForecastMin !== undefined ? state.selectedForecastMin : 0;
 
   // 1. Determine wetland flood status & color based on forecast time
   let lakeStatus = "red";
   let wetlandMessage = "⚠️ Estimate to flood in 20 mins (9:20 AM - 9:30 AM)";
-  let routeWetlandLevel = "unsafe"; // unsafe | moderate | safe
 
-  if (t >= 120) {
-    // 11:00 AM: Safe, flood receded
-    lakeStatus = "safe";
-    wetlandMessage = "✅ Flood Receded — Safe (11:00 AM)";
-    routeWetlandLevel = "safe";
-  } else if (t >= 90) {
-    // 10:30 AM: Moderate risk, orange, receding
-    lakeStatus = "orange";
-    wetlandMessage = "⚠️ Moderate Risk — Water Level Receding (10:30 AM)";
-    routeWetlandLevel = "moderate";
+  if (t >= 105) {
+    // 11:00 AM slot
+    if (state.forecastShifted) {
+      lakeStatus = "orange";
+      wetlandMessage = "⚠️ Moderate Risk — Delayed Runoff Receding (11:00 AM)";
+    } else {
+      lakeStatus = "safe";
+      wetlandMessage = "✅ Flood Receded — Safe (11:00 AM)";
+    }
+  } else if (t >= 75) {
+    // 10:30 AM slot
+    if (state.forecastShifted) {
+      lakeStatus = "red";
+      wetlandMessage = "⚠️ High Inundation Sustained — Flooded (10:30 AM)";
+    } else {
+      lakeStatus = "orange";
+      wetlandMessage = "⚠️ Moderate Risk — Water Level Receding (10:30 AM)";
+    }
   } else if (t > 0) {
     // 9:30 AM (t=30) & 10:00 AM (t=60): Peak flooded, red
     lakeStatus = "red";
-    wetlandMessage = t >= 60 
+    wetlandMessage = t >= 45 
       ? "⚠️ High Inundation Peak (Flooded)"
       : "⚠️ Estimate to flood in 20 mins (9:20 AM)";
-    routeWetlandLevel = "unsafe";
   } else {
-    // 9:00 AM (t=0): Normal
-    lakeStatus = "safe";
-    wetlandMessage = "ℹ️ Current Condition: Roads Passable (9:00 AM)";
-    routeWetlandLevel = "safe";
+    // 9:00 AM (t=0): Present condition — MODERATE RISK instead of safe
+    lakeStatus = "orange";
+    wetlandMessage = "⚠️ Present Condition: Moderate Risk (9:00 AM)";
   }
 
   setPredictLakeHighlight(lakeStatus);
@@ -564,6 +640,7 @@ function updatePredictVisuals() {
   // 2. Add message icon popup on Bandar Bukit Raja Wetland Lake
   const wetlandEl = document.createElement("div");
   wetlandEl.className = "wetland-flood-marker";
+  wetlandEl.style.zIndex = "2";
   wetlandEl.innerHTML = `
     <div class="wetland-flood-bubble">
       <span class="wetland-bubble-icon">💬</span>
@@ -578,77 +655,263 @@ function updatePredictVisuals() {
     .setLngLat(BBR_WETLAND_CENTROID)
     .addTo(map);
 
-  // 3. Render 2 or 3 suggested alternative routes in faded purple
-  if (!state.altRoutes || state.altRoutes.length === 0) {
-    if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
-    return;
+  // 3. Dynamic Routes Rendering (15 mins non-shaded, 16 mins & 18 mins shaded)
+  // Ensure the 3 routes KEEP CHANGING dynamically as user slides through the fast forward
+  if (state.primaryRouteLine && map.getSource("fs-route")) {
+    map.getSource("fs-route").setData(state.primaryRouteLine);
   }
 
-  const altFeatures = state.altRoutes.map(alt => ({
-    type: "Feature",
-    geometry: alt.lineGeo.geometry,
-    properties: {
-      id: alt.id,
-      mins: alt.mins,
-      via: alt.via,
-      index: alt.index
-    }
-  }));
-
-  if (map.getSource("fs-route-alt")) {
-    map.getSource("fs-route-alt").setData({ type: "FeatureCollection", features: altFeatures });
+  // Determine dynamic Primary Safe Route time and status
+  let primaryMins = 15;
+  let primaryTag = "safe";
+  let primaryTitle = "15 mins safe route (Active)";
+  if (t < 15) {
+    primaryMins = 15;
+    primaryTag = "safe";
+    primaryTitle = "15 mins safe route (Active)";
+  } else if (t < 25) {
+    primaryMins = 17;
+    primaryTag = "safe detour";
+    primaryTitle = "17 mins safe detour (Avoiding surface pooling)";
+  } else if (t < 45) {
+    primaryMins = 21;
+    primaryTag = "safe elevated bypass";
+    primaryTitle = "21 mins safe elevated bypass (Jalan Makyong flooded)";
+  } else if (t < 75) {
+    primaryMins = 24;
+    primaryTag = "only safe corridor";
+    primaryTitle = "24 mins elevated southern link (Peak flood crest)";
+  } else if (t < 105) {
+    primaryMins = state.forecastShifted ? 22 : 18;
+    primaryTag = "safe";
+    primaryTitle = `${primaryMins} mins safe route (Water receding)`;
+  } else {
+    primaryMins = 15;
+    primaryTag = "safe";
+    primaryTitle = "15 mins safe route (All roads clear)";
   }
 
-  // 4. Place popup message icons on each suggested route showing minutes to reach
-  state.altRoutes.forEach(alt => {
-    const isWetlandRoute = alt.passesWetland || alt.mins === 16;
-    
-    let pillClass = "";
-    let timeClass = "";
-    let arrowClass = "";
-    let labelText = `${alt.mins} mins`;
+  // Pill 1: Primary safe route (non-shaded purple)
+  const pAnchor = state.primaryAnchorCoord || [101.4320, 3.0910];
+  const pEl = document.createElement("div");
+  pEl.className = "route-suggest-marker is-safe";
+  pEl.setAttribute("role", "button");
+  pEl.setAttribute("tabindex", "0");
+  pEl.setAttribute("title", primaryTitle);
+  pEl.innerHTML = `
+    <div class="route-suggest-pill pill-safe">
+      <span class="route-suggest-time time-safe">${primaryMins} mins <span class="route-suggest-tag safe">(${primaryTag})</span></span>
+    </div>
+    <div class="route-suggest-arrow arrow-safe"></div>
+  `;
+  pEl.onclick = () => {
+    applySafeRoute();
+  };
+  const pMarker = new maplibregl.Marker({ element: pEl, anchor: "bottom" })
+    .setLngLat(pAnchor)
+    .addTo(map);
+  altRouteMarkers.push(pMarker);
 
-    if (isWetlandRoute) {
-      if (routeWetlandLevel === "unsafe") {
-        pillClass = "pill-unsafe";
-        timeClass = "time-unsafe";
-        arrowClass = "arrow-unsafe";
-        labelText = `${alt.mins} mins <span class="route-suggest-unsafe">(unsafe)</span>`;
-      } else if (routeWetlandLevel === "moderate") {
-        pillClass = "pill-warning";
-        timeClass = "time-warning";
-        arrowClass = "arrow-warning";
-        labelText = `${alt.mins} mins <span class="route-suggest-unsafe" style="color:#e65100;">(moderate)</span>`;
+  // Dynamic Alternative Routes (16 mins wetland route & 18 mins northern route)
+  if (state.altRoutes && state.altRoutes.length > 0 && map.getSource("fs-route-alt")) {
+    const altFeatures = state.altRoutes.map((alt, idx) => {
+      const isAlt16 = (alt.mins === 16 || alt.passesWetland || idx === 0);
+      let lv = "moderate";
+      if (isAlt16) {
+        if (t >= 25 && t < 75) {
+          lv = "flooded"; // Danger Red line & casing!
+        } else if (t >= 75 && t < 105) {
+          lv = state.forecastShifted ? "flooded" : "moderate";
+        } else if (t >= 105) {
+          lv = state.forecastShifted ? "moderate" : "moderate";
+        } else {
+          lv = "moderate";
+        }
       } else {
-        // Safe at 11:00 AM! Exactly as user requested: "then 11 am change to safe and the 16mins unsafe route changed to safe"
-        labelText = `${alt.mins} mins`;
+        // 18 mins northern route
+        lv = "moderate";
       }
-    }
 
-    const el = document.createElement("div");
-    el.className = `route-suggest-marker ${isWetlandRoute && routeWetlandLevel === 'unsafe' ? 'is-unsafe' : ''}`;
-    el.setAttribute("role", "button");
-    el.setAttribute("tabindex", "0");
-    el.setAttribute("title", `Click to switch to this route (${labelText})`);
+      return {
+        type: "Feature",
+        geometry: alt.lineGeo.geometry,
+        properties: {
+          id: alt.id,
+          mins: alt.mins,
+          via: alt.via,
+          index: alt.index,
+          level: lv,
+          isShaded: true
+        }
+      };
+    });
+    map.getSource("fs-route-alt").setData({ type: "FeatureCollection", features: altFeatures });
 
-    el.innerHTML = `
-      <div class="route-suggest-pill ${pillClass}">
-        <span class="route-suggest-time ${timeClass}">${labelText}</span>
-      </div>
-      <div class="route-suggest-arrow ${arrowClass}"></div>
-    `;
-    el.onclick = () => {
-      applyChosenAltRoute(alt, isWetlandRoute ? routeWetlandLevel : "safe");
-    };
-    const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
-      .setLngLat(alt.anchorCoord)
-      .addTo(map);
-    altRouteMarkers.push(m);
+    // Render Pills 2 & 3 for alternative routes with dynamic time and danger state
+    state.altRoutes.forEach((alt, idx) => {
+      const isAlt16 = (alt.mins === 16 || alt.passesWetland || idx === 0);
+      let markerClass = "is-moderate";
+      let pillClass = "pill-moderate";
+      let timeClass = "time-moderate";
+      let arrowClass = "arrow-moderate";
+      let displayTime = `${alt.mins} mins`;
+      let tagHtml = `<span class="route-suggest-tag mod">(moderate)</span>`;
+      let title = `Click to view this route (${alt.mins} mins moderate risk)`;
+
+      if (isAlt16) {
+        if (t < 15) {
+          markerClass = "is-moderate";
+          pillClass = "pill-moderate";
+          timeClass = "time-moderate";
+          arrowClass = "arrow-moderate";
+          displayTime = "16 mins";
+          tagHtml = `<span class="route-suggest-tag mod">(moderate)</span>`;
+          title = "16 mins route (Moderate risk ~15cm near wetland)";
+        } else if (t < 25) {
+          markerClass = "is-moderate";
+          pillClass = "pill-warning";
+          timeClass = "time-warning";
+          arrowClass = "arrow-warning";
+          displayTime = "17 mins ⚠️";
+          tagHtml = `<span class="route-suggest-tag mod">(rising 25cm)</span>`;
+          title = "17 mins route (Water rising to 25cm along Jalan Makyong)";
+        } else if (t < 45) {
+          markerClass = "is-unsafe";
+          pillClass = "pill-unsafe";
+          timeClass = "time-unsafe";
+          arrowClass = "arrow-unsafe";
+          displayTime = "🚫 16 mins";
+          tagHtml = `<span class="route-suggest-tag danger">(Flooded 40cm - Impassable)</span>`;
+          title = "🚫 16 mins Wetland route: Submerged by 40cm floodwater. Completely impassable!";
+        } else if (t < 75) {
+          markerClass = "is-unsafe";
+          pillClass = "pill-unsafe";
+          timeClass = "time-unsafe";
+          arrowClass = "arrow-unsafe";
+          displayTime = "🚫 16 mins";
+          tagHtml = `<span class="route-suggest-tag danger">(Peak Flood 58cm - Blocked)</span>`;
+          title = "🚫 16 mins Wetland route: Extreme flood crest (58cm). Strictly closed!";
+        } else if (t < 105) {
+          if (state.forecastShifted) {
+            markerClass = "is-unsafe";
+            pillClass = "pill-unsafe";
+            timeClass = "time-unsafe";
+            arrowClass = "arrow-unsafe";
+            displayTime = "🚫 16 mins";
+            tagHtml = `<span class="route-suggest-tag danger">(Extended Flood 38cm)</span>`;
+            title = "🚫 16 mins route: Extended high inundation (38cm). Impassable.";
+          } else {
+            markerClass = "is-moderate";
+            pillClass = "pill-warning";
+            timeClass = "time-warning";
+            arrowClass = "arrow-warning";
+            displayTime = "16 mins ⚠️";
+            tagHtml = `<span class="route-suggest-tag mod">(Receding ~15cm)</span>`;
+            title = "16 mins route: Water receding into box culverts. Passable with caution.";
+          }
+        } else {
+          // t >= 105 (11:00 AM)
+          if (state.forecastShifted) {
+            markerClass = "is-moderate";
+            pillClass = "pill-warning";
+            timeClass = "time-warning";
+            arrowClass = "arrow-warning";
+            displayTime = "16 mins ⚠️";
+            tagHtml = `<span class="route-suggest-tag mod">(Delayed runoff)</span>`;
+            title = "16 mins route: Minor surface runoff. Drive cautiously.";
+          } else {
+            markerClass = "is-safe";
+            pillClass = "pill-safe";
+            timeClass = "time-safe";
+            arrowClass = "arrow-safe";
+            displayTime = "16 mins";
+            tagHtml = `<span class="route-suggest-tag safe">(cleared)</span>`;
+            title = "16 mins route: Road completely dry and clear.";
+          }
+        }
+      } else {
+        // Alt 2: 18 mins northern route
+        if (t < 15) {
+          displayTime = "18 mins";
+          tagHtml = `<span class="route-suggest-tag mod">(moderate)</span>`;
+          title = "18 mins Northern connector route";
+        } else if (t < 35) {
+          displayTime = "19 mins ⚠️";
+          tagHtml = `<span class="route-suggest-tag mod">(surface runoff)</span>`;
+          title = "19 mins: Surface runoff near monsoon drain. Drive cautiously.";
+        } else if (t < 75) {
+          displayTime = "22 mins ⚠️";
+          tagHtml = `<span class="route-suggest-tag mod">(high caution)</span>`;
+          title = "22 mins: Heavy runoff. Traffic slowed.";
+        } else if (t < 105) {
+          displayTime = "19 mins ⚠️";
+          tagHtml = `<span class="route-suggest-tag mod">(caution)</span>`;
+          title = "19 mins: Runoff receding into drainage.";
+        } else {
+          markerClass = "is-safe";
+          pillClass = "pill-safe";
+          timeClass = "time-safe";
+          arrowClass = "arrow-safe";
+          displayTime = "18 mins";
+          tagHtml = `<span class="route-suggest-tag safe">(safe)</span>`;
+          title = "18 mins: Elevated bypass clear and dry.";
+        }
+      }
+
+      const el = document.createElement("div");
+      el.className = `route-suggest-marker ${markerClass}`;
+      el.setAttribute("role", "button");
+      el.setAttribute("tabindex", "0");
+      el.setAttribute("title", title);
+      el.innerHTML = `
+        <div class="route-suggest-pill ${pillClass}">
+          <span class="route-suggest-time ${timeClass}">${displayTime} ${tagHtml}</span>
+        </div>
+        <div class="route-suggest-arrow ${arrowClass}"></div>
+      `;
+      el.onclick = () => {
+        if (markerClass === "is-unsafe") {
+          toast(`🚫 ${alt.mins} mins route is submerged by floodwater and impassable! Please follow the safe elevated bypass.`);
+        } else {
+          applyChosenAltRoute(alt, markerClass === "is-safe" ? "safe" : "moderate");
+        }
+      };
+      const m = new maplibregl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat(alt.anchorCoord)
+        .addTo(map);
+      altRouteMarkers.push(m);
+    });
+  }
+}
+
+// Switch back to 15 mins primary safe route
+function applySafeRoute() {
+  if (!state.primaryRouteData) return;
+  const { line, mins, totalLengthM, stepList, baseIds, names, T } = state.primaryRouteData;
+  ui.eta.textContent = `${mins} min`;
+  ui.dist.textContent = `${fmtLen(totalLengthM)} ${state.mode === "drive" ? "driving" : "walking"}`;
+  ui.sub.innerHTML = '<span class="badge ok" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7;">15 mins safe route active • Avoids moderate-risk roads</span>';
+  toast(`Switched route: 15 mins (safe)`);
+
+  ui.steps.innerHTML = "";
+  stepList.forEach((st, i) => {
+    const li = document.createElement("li"), dot = document.createElement("span"), txt = document.createElement("span"), len = document.createElement("small");
+    const lv = level(st.risk, T);
+    dot.className = "rk"; dot.style.background = lv === "moderate" ? css("--moderate") : css("--route");
+    txt.textContent = (i === 0 ? "Start on " : st.bridge ? "Cross " : "Continue on ") + st.name;
+    len.textContent = fmtLen(st.lengthM);
+    li.append(dot, txt, len); ui.steps.appendChild(li);
   });
+  const end = document.createElement("li"), endDot = document.createElement("span"), endTxt = document.createElement("span");
+  endDot.className = "rk"; endDot.style.background = css("--dest"); endTxt.textContent = `Arrive at ${state.to.name}`;
+  end.append(endDot, endTxt, document.createElement("small")); ui.steps.appendChild(end);
+
+  state.lastRouteKey = baseIds.join(","); state.lastEdges = baseIds; state.lastNames = names;
+  map.getSource("fs-route").setData(line);
 }
 
 // Switch primary route to a suggested alternative route
-function applyChosenAltRoute(alt, level = "safe") {
+function applyChosenAltRoute(alt, level = "moderate") {
   const g = state.graph, T = th(), risk = new Map();
   if (state.hasRain && state.scenario) {
     for (const e of g.edges.values()) risk.set(e.id, state.scenario.risk(e.id, state.t));
@@ -661,23 +924,15 @@ function applyChosenAltRoute(alt, level = "safe") {
 
   ui.eta.textContent = `${alt.mins} min`;
   ui.dist.textContent = `${fmtLen(alt.lengthM)} ${state.mode === "drive" ? "driving" : "walking"}`;
-  if (level === "unsafe") {
-    ui.sub.innerHTML = `<span class="badge" style="background:#ffebee; color:#c62828; border:1px solid #ef9a9a;">⚠️ ${alt.mins} mins route active: passes through Bandar Bukit Raja Wetland (unsafe)</span>`;
-    toast(`Warning: Selected ${alt.mins} mins route passes through Bandar Bukit Raja Wetland (unsafe)`);
-  } else if (level === "moderate") {
-    ui.sub.innerHTML = `<span class="badge" style="background:#fff3e0; color:#e65100; border:1px solid #ffe082;">⚠️ ${alt.mins} mins route active: moderate risk receding</span>`;
-    toast(`Caution: Selected ${alt.mins} mins route has moderate receding runoff`);
-  } else {
-    ui.sub.innerHTML = `<span class="badge ok">${alt.mins} mins route active (safe)</span>`;
-    toast(`Switched route: ${alt.mins} mins`);
-  }
+  ui.sub.innerHTML = `<span class="badge mod" style="background:#fff3e0; color:#e65100; border:1px solid #ffe082;">⚠️ ${alt.mins} mins route active: moderate risk (shaded)</span>`;
+  toast(`Switched route: ${alt.mins} mins (moderate risk)`);
 
   ui.steps.innerHTML = "";
   stepList.forEach((st, i) => {
     const li = document.createElement("li"), dot = document.createElement("span"), txt = document.createElement("span"), len = document.createElement("small");
     const lv = level(st.risk, T);
-    dot.className = "rk"; dot.style.background = lv === "moderate" ? css("--moderate") : css("--route");
-    txt.textContent = (i === 0 ? "Start on " : st.bridge ? "Cross " : "Continue on ") + st.name + (lv === "moderate" ? " (moderate risk)" : "");
+    dot.className = "rk"; dot.style.background = css("--moderate");
+    txt.textContent = (i === 0 ? "Start on " : st.bridge ? "Cross " : "Continue on ") + st.name + " (moderate risk)";
     len.textContent = fmtLen(st.lengthM);
     li.append(dot, txt, len); ui.steps.appendChild(li);
   });
@@ -689,50 +944,649 @@ function applyChosenAltRoute(alt, level = "safe") {
   map.getSource("fs-route").setData(line);
 }
 
-// ---------------- Select Forecast Time (e.g. 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM)
-function selectForecastTime(min) {
-  state.selectedForecastMin = min;
+// ---------------- Fast Forward & Time Scrub Simulation Controller
+function getMinuteTelemetry(min, shifted) {
+  const anchors = [
+    { t: 0,   binjai: 3.65, rasau: 2.85, klang: 2.30, rain: 18.0, pct: 68, vol: 54400, risk: "MODERATE", badge: "badge-warning", color: "#ff9100" },
+    { t: 30,  binjai: 4.55, rasau: 4.10, klang: 3.40, rain: 68.0, pct: 88, vol: 70400, risk: "FLOODED",  badge: "badge-danger",  color: "#e53935" },
+    { t: 60,  binjai: 4.80, rasau: 4.35, klang: 3.60, rain: 78.0, pct: 84, vol: 67200, risk: "FLOODED",  badge: "badge-danger",  color: "#c62828" },
+    {
+      t: 90,
+      binjai: shifted ? 4.58 : 4.10,
+      rasau: shifted ? 4.15 : 3.65,
+      klang: shifted ? 3.45 : 3.10,
+      rain: shifted ? 42.0 : 28.0,
+      pct: shifted ? 86 : 68,
+      vol: shifted ? 68800 : 54400,
+      risk: shifted ? "FLOODED" : "MODERATE",
+      badge: shifted ? "badge-danger" : "badge-warning",
+      color: shifted ? "#e53935" : "#ff9100"
+    },
+    {
+      t: 120,
+      binjai: shifted ? 4.05 : 3.25,
+      rasau: shifted ? 3.40 : 2.70,
+      klang: shifted ? 2.95 : 2.40,
+      rain: shifted ? 14.0 : 4.0,
+      pct: shifted ? 64 : 42,
+      vol: shifted ? 51200 : 33600,
+      risk: shifted ? "MODERATE" : "SAFE",
+      badge: shifted ? "badge-warning" : "badge-safe",
+      color: shifted ? "#ff9100" : "#2e7d32"
+    },
+    {
+      t: 150,
+      binjai: 2.80, rasau: 2.30, klang: 2.10, rain: 0.0, pct: 28, vol: 22400,
+      risk: "SAFE", badge: "badge-safe", color: "#2e7d32"
+    },
+    {
+      t: 180,
+      binjai: 2.45, rasau: 2.10, klang: 1.95, rain: 0.0, pct: 18, vol: 14400,
+      risk: "SAFE", badge: "badge-safe", color: "#2e7d32"
+    },
+    {
+      t: 210,
+      binjai: 2.30, rasau: 1.95, klang: 1.85, rain: 0.0, pct: 14, vol: 11200,
+      risk: "SAFE", badge: "badge-safe", color: "#2e7d32"
+    }
+  ];
+
+  let p1 = anchors[0], p2 = anchors[anchors.length - 1];
+  for (let i = 0; i < anchors.length - 1; i++) {
+    if (min >= anchors[i].t && min <= anchors[i + 1].t) {
+      p1 = anchors[i];
+      p2 = anchors[i + 1];
+      break;
+    }
+  }
+
+  const span = p2.t - p1.t;
+  const factor = span > 0 ? (min - p1.t) / span : 0;
+  const binjai = Number((p1.binjai + (p2.binjai - p1.binjai) * factor).toFixed(2));
+  const rasau = Number((p1.rasau + (p2.rasau - p1.rasau) * factor).toFixed(2));
+  const klang = Number((p1.klang + (p2.klang - p1.klang) * factor).toFixed(2));
+  const rain = Math.round(p1.rain + (p2.rain - p1.rain) * factor);
+  const pct = Math.round(p1.pct + (p2.pct - p1.pct) * factor);
+  const vol = Math.round(p1.vol + (p2.vol - p1.vol) * factor);
+
+  let risk = "SAFE", badge = "badge-safe", color = "#2e7d32";
+  if (binjai >= 4.50) {
+    risk = "FLOODED"; badge = "badge-danger"; color = "#e53935";
+  } else if (binjai >= 3.50) {
+    risk = "MODERATE"; badge = "badge-warning"; color = "#ff9100";
+  }
+
+  return { binjai, rasau, klang, rain, pct, vol, risk, badge, color };
+}
+
+function updateLiveMinuteTelemetry(min) {
+  const telem = getMinuteTelemetry(min, state.forecastShifted);
+  if (ui.spongeStatusBadge) {
+    ui.spongeStatusBadge.textContent = telem.risk;
+    ui.spongeStatusBadge.className = `sponge-badge ${telem.badge}`;
+  }
+  if (ui.spongeHudBar) {
+    ui.spongeHudBar.style.width = `${telem.pct}%`;
+    ui.spongeHudBar.style.backgroundColor = telem.color;
+  }
+  if (ui.spongeStorageText) {
+    ui.spongeStorageText.textContent = `${telem.pct}% (Sg. Binjai: ${telem.binjai.toFixed(2)}m • ~${telem.vol.toLocaleString()} m³)`;
+  }
+  if (ui.spongeRainText) {
+    ui.spongeRainText.textContent = `Telemetry: ${telem.rain} mm/h rainfall`;
+  }
+}
+
+function setForecastShift(shifted, toastUser = true) {
+  if (state.forecastShifted === shifted) return;
+  state.forecastShifted = shifted;
+
+  if (shifted) {
+    if (toastUser) {
+      toast("⚡ Fast-Forward Simulation: Inundation escalated! 10:30 AM is now Flooded, 11:00 AM is Moderate.");
+    }
+  } else {
+    if (toastUser) {
+      toast("⏪ Timeline reset to baseline condition: 10:30 AM Moderate, 11:00 AM Safe.");
+    }
+  }
+
+  updatePredictModalView();
+  updatePredictVisuals();
+
+  if (state.t >= 75) {
+    renderForecastBriefing(state.t);
+  }
+}
+
+function updatePredictModalView() {
+  let currentWl = 2.10, predWl = 2.50, timeLabel = "9:00 AM";
+
+  if (state.timelineMode === "q4_2024" && state.q4Data && state.q4Data[state.q4CurrentIndex]) {
+    const pt = state.q4Data[state.q4CurrentIndex];
+    currentWl = pt.actual_level_m;
+    predWl = pt.pred_xgb_m;
+    timeLabel = pt.date_display;
+  } else {
+    const telem = getMinuteTelemetry(state.t, state.forecastShifted);
+    currentWl = telem.binjai;
+    if (state.t >= 15 && state.t < 60) {
+      predWl = Number((telem.binjai + 0.65).toFixed(2));
+    } else if (state.t >= 60 && state.t < 90) {
+      predWl = Number((telem.binjai + (state.forecastShifted ? 0.45 : -0.25)).toFixed(2));
+    } else if (state.t >= 90) {
+      predWl = Number((telem.binjai - 0.55).toFixed(2));
+    } else {
+      predWl = Number((telem.binjai + 0.45).toFixed(2));
+    }
+    timeLabel = formatClockTime(state.t);
+  }
+
+  const schedule = computeAreaFloodSchedule(currentWl, predWl, timeLabel);
+
+  if (ui.predictPanelSlot) {
+    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel);
+    const closeBtn = document.getElementById("predictCloseBtn");
+    if (closeBtn) closeBtn.onclick = () => closePredictModal();
+    bindAreaCardClicks(ui.predictPanelSlot);
+  }
+
+  if (ui.q4AreaScheduleSlot) {
+    ui.q4AreaScheduleSlot.innerHTML = renderAreaScheduleHtml(schedule);
+    bindAreaCardClicks(ui.q4AreaScheduleSlot);
+  }
+
+  updateInundationMarkers(schedule);
+}
+
+function closePredictModal() {
+  state.predictActive = false;
+  if (ui.predictBtn) ui.predictBtn.setAttribute("aria-pressed", "false");
+  if (ui.predictTimePopup) ui.predictTimePopup.hidden = true;
+}
+
+function bindAreaCardClicks(container) {
+  if (!container) return;
+  container.querySelectorAll(".area-sched-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const lat = parseFloat(card.dataset.lat);
+      const lng = parseFloat(card.dataset.lng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        map.easeTo({ center: [lng, lat], zoom: 15.5 });
+        const zoneId = card.dataset.zoneId;
+        const markerEl = document.getElementById(`marker-${zoneId}`);
+        if (markerEl) {
+          markerEl.style.transform = "translate(-50%, -50%) scale(1.35)";
+          markerEl.style.zIndex = "999";
+          setTimeout(() => {
+            markerEl.style.transform = "translate(-50%, -50%) scale(1)";
+            markerEl.style.zIndex = "";
+          }, 1500);
+        }
+      }
+    });
+  });
+}
+
+function applyTimeScrub(min, fromFastForward = false) {
+  min = Math.max(0, Math.min(120, Math.round(min)));
   state.t = min;
   state.hasRain = min > 0;
 
-  // Update active class on time chips
-  document.querySelectorAll(".time-chip").forEach(chip => {
-    const chipMin = parseInt(chip.dataset.min, 10);
-    chip.classList.toggle("active", chipMin === min);
-  });
-
-  // Update top middle clock
+  if (ui.ffSlider && parseInt(ui.ffSlider.value, 10) !== min) {
+    ui.ffSlider.value = min;
+  }
   if (ui.topTimeVal) {
     ui.topTimeVal.textContent = formatClockTime(min);
   }
+  if (ui.demoReadoutVal) {
+    ui.demoReadoutVal.textContent = formatClockTime(min);
+  }
+
+  // When fast forwarding past minute 28-30, dynamic flood shift triggers
+  if (min >= 28 && !state.forecastShifted) {
+    setForecastShift(true, true);
+  } else if (min < 15 && state.forecastShifted) {
+    setForecastShift(false, false);
+  }
+
+  // Update FloodShield prediction and evacuation schedule based on current scrub time
+  updatePredictModalView();
+
+  if (min > 0) {
+    dismissToast();
+  }
 
   update(true);
+  updatePredictVisuals();
+  updateLiveMinuteTelemetry(min);
+}
 
-  // If prediction is active, also asynchronously query live ML prediction backend
-  if (state.predictActive) {
-    const telemetryByMin = {
-      0:   { binjai_level: 2.10, binjai_rain: 0.0,  rasau_level: 2.05, klang_level: 1.90, cum_rain_3h: 0 },
-      30:  { binjai_level: 3.65, binjai_rain: 38.0, rasau_level: 3.10, klang_level: 2.40, cum_rain_3h: 45 },
-      60:  { binjai_level: 4.45, binjai_rain: 68.0, rasau_level: 4.05, klang_level: 3.40, cum_rain_3h: 95 },
-      90:  { binjai_level: 4.10, binjai_rain: 28.0, rasau_level: 3.65, klang_level: 3.10, cum_rain_3h: 120 },
-      120: { binjai_level: 3.35, binjai_rain: 6.0,  rasau_level: 2.80, klang_level: 2.50, cum_rain_3h: 128 }
-    };
-    const telem = telemetryByMin[min] || telemetryByMin[30];
-    fetchLiveFloodPrediction(telem).then(pred => {
-      if (pred && pred.status === "success" && ui.spongeStatusBadge) {
-        ui.spongeStatusBadge.textContent = pred.risk_category;
-        ui.spongeStatusBadge.className = `sponge-badge ${pred.badge_class}`;
-        if (ui.spongeHudBar) {
-          ui.spongeHudBar.style.width = `${pred.sponge_retention_pct}%`;
-          ui.spongeHudBar.style.backgroundColor = pred.risk_color;
-        }
-        if (ui.spongeStorageText) {
-          ui.spongeStorageText.textContent = `${pred.sponge_retention_pct}% (Sg. Binjai: ${pred.predicted_level_m}m)`;
-        }
-        console.log(`🌊 [AI Backend 3h Forecast] Sg. Binjai Level: ${pred.predicted_level_m}m (${pred.risk_category}) via ${pred.model_source}`);
-      }
-    }).catch(() => {});
+// ---------------- Sg. Binjai Telemetry (25/11/2024 00:00 - 05/12/2024 00:00)
+async function loadQ4TelemetryData() {
+  try {
+    const res = await fetch("./data/binjai_telemetry_25nov_05dec.json");
+    if (res.ok) {
+      state.q4Data = await res.json();
+      console.log(`[OK] Loaded ${state.q4Data.length} records for Sg. Binjai (25/11/2024 - 05/12/2024).`);
+      applyQ4Telemetry(state.q4CurrentIndex ?? 100);
+    }
+  } catch (err) {
+    console.warn("Could not load Sg. Binjai telemetry dataset:", err);
   }
+}
+
+function toggleTimelineMode(forcedMode) {
+  const nextMode = forcedMode || (state.timelineMode === "demo" ? "q4_2024" : "demo");
+  state.timelineMode = nextMode;
+
+  if (nextMode === "q4_2024") {
+    if (ui.timelineModeBtn) {
+      ui.timelineModeBtn.classList.add("active-q4");
+      if (ui.timelineModeIcon) ui.timelineModeIcon.textContent = "⚡";
+      if (ui.timelineModeLabel) ui.timelineModeLabel.textContent = "Demo Run";
+    }
+    if (ui.ffDemoSection) ui.ffDemoSection.hidden = true;
+    if (ui.ffQ4Section) ui.ffQ4Section.hidden = false;
+    if (ui.topFfPanel) {
+      ui.topFfPanel.hidden = false;
+      if (ui.topFfBtn) ui.topFfBtn.setAttribute("aria-pressed", "true");
+    }
+
+    const targetIdx = state.q4CurrentIndex ?? 100;
+    applyQ4Telemetry(targetIdx);
+    toast("Switched to Sg. Binjai JPS Telemetry (25 Nov – 05 Dec 2024). Viewing 29 Nov 4.76m Peak Crest.");
+  } else {
+    if (ui.timelineModeBtn) {
+      ui.timelineModeBtn.classList.remove("active-q4");
+      if (ui.timelineModeIcon) ui.timelineModeIcon.textContent = "📅";
+      if (ui.timelineModeLabel) ui.timelineModeLabel.textContent = "Oct–Dec 2024";
+    }
+    if (ui.ffDemoSection) ui.ffDemoSection.hidden = false;
+    if (ui.ffQ4Section) ui.ffQ4Section.hidden = true;
+    applyTimeScrub(0);
+    toast("Switched to Demo Timeline (9:00 AM baseline).");
+  }
+}
+
+function applyQ4Telemetry(idx) {
+  if (!state.q4Data || state.q4Data.length === 0) return;
+  idx = Math.max(0, Math.min(state.q4Data.length - 1, Math.round(idx)));
+  state.q4CurrentIndex = idx;
+  const pt = state.q4Data[idx];
+  if (!pt) return;
+
+  if (ui.topTimeVal) {
+    ui.topTimeVal.textContent = pt.date_display;
+  }
+  if (ui.q4ReadoutVal) {
+    ui.q4ReadoutVal.textContent = `${pt.date_display} (${pt.date_label})`;
+  }
+  if (ui.q4Slider && parseInt(ui.q4Slider.value, 10) !== idx) {
+    ui.q4Slider.value = idx;
+  }
+
+  // Update Telemetry Comparison HUD for Sg. Binjai Only
+  if (ui.q4ActualLevel) ui.q4ActualLevel.textContent = `${pt.actual_level_m.toFixed(2)} m`;
+  if (ui.q4ActualBadge) {
+    ui.q4ActualBadge.textContent = pt.actual_jps.cat;
+    ui.q4ActualBadge.className = `sponge-badge ${pt.actual_jps.cls === 'danger' ? 'badge-danger' : pt.actual_jps.cls === 'warning' ? 'badge-warning' : 'badge-safe'}`;
+  }
+  if (ui.q4ActualRain) ui.q4ActualRain.textContent = `${pt.rain_mm_h.toFixed(1)} mm/h`;
+  if (ui.q4RoadDepth) ui.q4RoadDepth.textContent = pt.road_condition;
+  if (ui.q4PredLevel) ui.q4PredLevel.textContent = `${pt.pred_xgb_m.toFixed(2)} m`;
+  if (ui.q4PredBadge) {
+    ui.q4PredBadge.textContent = pt.pred_jps.cat;
+    ui.q4PredBadge.className = `sponge-badge ${pt.pred_jps.cls === 'danger' ? 'badge-danger' : pt.pred_jps.cls === 'warning' ? 'badge-warning' : 'badge-safe'}`;
+  }
+  if (ui.q4RfLevel) ui.q4RfLevel.textContent = `${pt.pred_base_m.toFixed(2)} m (lags 3h)`;
+
+  // Highlight landmark button
+  document.querySelectorAll(".q4-landmark-btn").forEach(btn => {
+    const btnHour = parseInt(btn.dataset.hour, 10);
+    btn.classList.toggle("active", Math.abs(btnHour - idx) < 6);
+  });
+
+  // Update Sponge HUD
+  if (ui.spongeStatusBadge) {
+    ui.spongeStatusBadge.textContent = pt.actual_jps.cat;
+    ui.spongeStatusBadge.className = `sponge-badge ${pt.actual_jps.cls === 'danger' ? 'badge-danger' : pt.actual_jps.cls === 'warning' ? 'badge-warning' : 'badge-safe'}`;
+  }
+  if (ui.spongeHudBar) {
+    ui.spongeHudBar.style.width = `${pt.retention_pct}%`;
+    ui.spongeHudBar.style.backgroundColor = pt.actual_jps.color;
+  }
+  if (ui.spongeStorageText) {
+    ui.spongeStorageText.textContent = `${pt.retention_pct}% (Sg. Binjai: ${pt.actual_level_m.toFixed(2)}m • Forecast t+3h: ${pt.pred_xgb_m.toFixed(2)}m)`;
+  }
+  if (ui.spongeRainText) {
+    ui.spongeRainText.textContent = `Telemetry: ${pt.rain_mm_h} mm/h rainfall`;
+  }
+
+  // Hydraulic Elevation Mapping:
+  // Map river stage & rainfall to road depth simulation timestep
+  let simMin = 0;
+  if (pt.actual_level_m >= 4.50) {
+    simMin = 45; // Flash flood crest: Jalan Makyong submerged (40cm), impassable
+  } else if (pt.actual_level_m >= 4.20) {
+    simMin = 25; // Warning: surface runoff
+  } else if (pt.actual_level_m >= 3.50) {
+    simMin = 15; // Alert: ponding at low dips
+  } else {
+    simMin = 0;  // Normal: dry & safe
+  }
+
+  state.t = simMin;
+  state.hasRain = pt.rain_mm_h > 0 || pt.actual_level_m >= 3.50;
+  state.selectedForecastMin = simMin;
+
+  // Dynamic Area & Time Flood Inundation Schedule based on Sg. Binjai telemetry
+  updatePredictModalView();
+
+  update(true);
+  updatePredictVisuals();
+}
+
+// ---------------- Select Forecast Time (e.g. 9:00 AM, 9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM)
+function selectForecastTime(min) {
+  state.selectedForecastMin = min;
+
+  const chips = document.querySelectorAll("#predictTimePopup .time-chip");
+  if (chips.length > 0) {
+    chips.forEach(chip => {
+      const chipMin = parseInt(chip.dataset.min, 10);
+      chip.classList.toggle("active", chipMin === min);
+    });
+  }
+
+  // Query live ML prediction backend for telemetry validation
+  const telemetryByMin = {
+    0:   { binjai_level: 3.65, binjai_rain: 18.0, rasau_level: 2.85, klang_level: 2.30, cum_rain_3h: 25 },
+    30:  { binjai_level: 4.55, binjai_rain: 68.0, rasau_level: 4.10, klang_level: 3.40, cum_rain_3h: 95 },
+    60:  { binjai_level: 4.80, binjai_rain: 78.0, rasau_level: 4.35, klang_level: 3.60, cum_rain_3h: 120 },
+    90:  { binjai_level: state.forecastShifted ? 4.58 : 4.10, binjai_rain: 28.0, rasau_level: 3.65, klang_level: 3.10, cum_rain_3h: 125 },
+    120: { binjai_level: state.forecastShifted ? 4.05 : 3.25, binjai_rain: 4.0,  rasau_level: 2.70, klang_level: 2.40, cum_rain_3h: 128 },
+    150: { binjai_level: 2.80, binjai_rain: 0.0, rasau_level: 2.30, klang_level: 2.10, cum_rain_3h: 128 },
+    180: { binjai_level: 2.45, binjai_rain: 0.0, rasau_level: 2.10, klang_level: 1.95, cum_rain_3h: 128 },
+    210: { binjai_level: 2.30, binjai_rain: 0.0, rasau_level: 1.95, klang_level: 1.85, cum_rain_3h: 128 }
+  };
+  let telem;
+  if (state.timelineMode === "q4_2024" && state.q4Data && state.q4Data[state.q4CurrentIndex]) {
+    const qPt = state.q4Data[state.q4CurrentIndex];
+    telem = {
+      binjai_level: qPt.actual_level_m,
+      binjai_rain: qPt.rain_mm_h,
+      rasau_level: qPt.rasau_level_m,
+      klang_level: qPt.klang_level_m,
+      cum_rain_3h: qPt.rain_mm_h * 2.5
+    };
+  } else {
+    telem = telemetryByMin[min] || getMinuteTelemetry(min, state.forecastShifted);
+  }
+
+  updatePredictVisuals();
+  renderForecastBriefing(min);
+  updateLiveMinuteTelemetry(min);
+
+  fetchLiveFloodPrediction(telem).then(pred => {
+    if (pred && pred.status === "success" && ui.spongeStatusBadge) {
+      console.log(`🌊 [AI Backend 3h Forecast] Sg. Binjai Level: ${pred.predicted_level_m}m (${pred.risk_category}) via ${pred.model_source}`);
+    }
+  }).catch(() => {});
+}
+
+function renderForecastBriefing(t) {
+  let statsHtml = "";
+  let whereFloodedHtml = "";
+  let unsafeRoutesHtml = "";
+
+  if (t === 30) {
+    // 9:30 AM (Flooded - Inundation Onset)
+    ui.eta.textContent = "Forecast Condition";
+    ui.dist.textContent = "9:30 AM (Flooded)";
+    ui.sub.innerHTML = `<span class="badge danger" style="background:#ffebee; color:#c62828; border:1px solid #ef9a9a; font-weight:700;">🚨 JPS DANGER LEVEL — High Flood Inundation</span>`;
+
+    statsHtml = `
+      <div class="forecast-card-item">
+        <div class="forecast-card-title danger">🌊 Water Level & Danger Severity</div>
+        <div class="forecast-card-stat" style="color:#c62828;">4.55 m &bull; DANGER Threshold (&ge;4.50m)</div>
+        <div class="forecast-card-desc">
+          <strong>Road Water Depth:</strong> 35 &ndash; 45 cm (Severe hazard for all vehicles)<br>
+          <strong>Sponge Retention:</strong> 88% capacity (~70,400 m³ absorbed)<br>
+          <strong>Status:</strong> Rapid runoff surge from upstream Sg. Binjai catchment
+        </div>
+      </div>
+    `;
+
+    whereFloodedHtml = `
+      <div class="forecast-card-item">
+        <div class="forecast-card-title danger">📍 Where Will Be Flooded</div>
+        <div class="forecast-card-desc">
+          &bull; <strong>Bandar Bukit Raja Wetland Lake:</strong> Overtopping northern retention perimeter<br>
+          &bull; <strong>Jalan Makyong 5A/6:</strong> Low-lying road dip submerged (~40 cm depth)<br>
+          &bull; <strong>Persiaran Sungai Keramat:</strong> Intake swales reaching full capacity
+        </div>
+      </div>
+    `;
+
+    unsafeRoutesHtml = `
+      <div class="forecast-card-item">
+        <div class="forecast-card-title danger">🚫 Which Routes Are Unsafe</div>
+        <div class="forecast-card-desc">
+          <div style="margin-bottom:6px;"><span class="forecast-route-tag unsafe">UNSAFE</span> <strong>16 mins Wetland Route:</strong> Inundated by 40 cm floodwater at Jalan Makyong. Completely impassable.</div>
+          <div style="margin-bottom:6px;"><span class="forecast-route-tag mod">CAUTION</span> <strong>18 mins Northern Route:</strong> Heavy surface runoff near monsoon drain.</div>
+          <div><span class="forecast-route-tag safe">SAFE ALTERNATIVE</span> <strong>South Bypass:</strong> Persiaran Bukit Raja South & Jalan Batu Belah remain elevated, clear and passable.</div>
+        </div>
+      </div>
+    `;
+  } else if (t === 60) {
+    // 10:00 AM (Peak Flood Inundation)
+    ui.eta.textContent = "Forecast Condition";
+    ui.dist.textContent = "10:00 AM (Peak Flood)";
+    ui.sub.innerHTML = `<span class="badge danger" style="background:#ffebee; color:#c62828; border:1px solid #ef9a9a; font-weight:700;">🚨 PEAK INUNDATION — Severe Flooding Active</span>`;
+
+    statsHtml = `
+      <div class="forecast-card-item">
+        <div class="forecast-card-title danger">🌊 Water Level & Danger Severity</div>
+        <div class="forecast-card-stat" style="color:#c62828;">4.80 m &bull; EXTREME DANGER (Peak Crest)</div>
+        <div class="forecast-card-desc">
+          <strong>Road Water Depth:</strong> 50 &ndash; 65 cm (Critical danger — strictly impassable)<br>
+          <strong>Sponge Retention:</strong> 84% capacity (~67,200 m³ stored)<br>
+          <strong>Status:</strong> Peak crest active across Meru & Bukit Raja river corridor
+        </div>
+      </div>
+    `;
+
+    whereFloodedHtml = `
+      <div class="forecast-card-item">
+        <div class="forecast-card-title danger">📍 Where Will Be Flooded</div>
+        <div class="forecast-card-desc">
+          &bull; <strong>Full BBR Wetland Corridor:</strong> Completely inundated, surrounding park trails submerged<br>
+          &bull; <strong>Jalan Sungai Puloh:</strong> Heavy backwater at monsoon culvert discharge points<br>
+          &bull; <strong>Taman Kyra & Meru Intersections:</strong> Surface pooling up to 60 cm
+        </div>
+      </div>
+    `;
+
+    unsafeRoutesHtml = `
+      <div class="forecast-card-item">
+        <div class="forecast-card-title danger">🚫 Which Routes Are Unsafe</div>
+        <div class="forecast-card-desc">
+          <div style="margin-bottom:6px;"><span class="forecast-route-tag unsafe">UNSAFE</span> <strong>16 mins Wetland Route:</strong> Deep floodwater > 50 cm. All vehicle access blocked.</div>
+          <div style="margin-bottom:6px;"><span class="forecast-route-tag unsafe">UNSAFE</span> <strong>18 mins Northern Route:</strong> Water overtopping secondary connector roads.</div>
+          <div><span class="forecast-route-tag safe">ONLY SAFE CORRIDOR</span> <strong>High-Elevation Arterial:</strong> Elevated Jalan Batu Belah / southern highway link to Masjid BBR (PPS).</div>
+        </div>
+      </div>
+    `;
+  } else if (t >= 75 && t < 105) {
+    // 10:30 AM slot
+    if (state.forecastShifted) {
+      // Shifted to Flooded from Moderate
+      ui.eta.textContent = "Forecast Condition";
+      ui.dist.textContent = "10:30 AM (Flooded)";
+      ui.sub.innerHTML = `<span class="badge danger" style="background:#ffebee; color:#c62828; border:1px solid #ef9a9a; font-weight:700;">🚨 JPS DANGER LEVEL — High Flood Extended</span>`;
+
+      statsHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title danger">🌊 Water Level & Severity</div>
+          <div class="forecast-card-stat" style="color:#c62828;">4.58 m &bull; DANGER Threshold (&ge;4.50m)</div>
+          <div class="forecast-card-desc">
+            <strong>Road Water Depth:</strong> 32 &ndash; 42 cm (Submerged — dangerous for vehicles)<br>
+            <strong>Sponge Retention:</strong> 86% capacity (~68,800 m³ sustained)<br>
+            <strong>Status:</strong> Storm runoff sustained from Meru; high water delayed
+          </div>
+        </div>
+      `;
+
+      whereFloodedHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title danger">📍 Where Will Be Flooded</div>
+          <div class="forecast-card-desc">
+            &bull; <strong>Bandar Bukit Raja Wetland:</strong> Still overflowed, lake trails submerged<br>
+            &bull; <strong>Jalan Makyong 5A/6:</strong> Standing floodwater 35 cm deep<br>
+            &bull; <strong>Persiaran Sungai Keramat:</strong> Slow drainage due to swollen Meru outlet
+          </div>
+        </div>
+      `;
+
+      unsafeRoutesHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title danger">🚫 Which Routes Are Unsafe</div>
+          <div class="forecast-card-desc">
+            <div style="margin-bottom:6px;"><span class="forecast-route-tag unsafe">UNSAFE</span> <strong>16 mins Wetland Route:</strong> Deep floodwater > 30 cm. Impassable for cars.</div>
+            <div style="margin-bottom:6px;"><span class="forecast-route-tag mod">CAUTION</span> <strong>18 mins Northern Route:</strong> Heavy residual runoff.</div>
+            <div><span class="forecast-route-tag safe">SAFE ALTERNATIVE</span> <strong>South Bypass:</strong> Elevated Persiaran Bukit Raja South remains open.</div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Normal baseline: Moderate risk receding
+      ui.eta.textContent = "Forecast Condition";
+      ui.dist.textContent = "10:30 AM (Moderate)";
+      ui.sub.innerHTML = `<span class="badge mod" style="background:#fff3e0; color:#e65100; border:1px solid #ffcc80; font-weight:700;">⚠️ MODERATE RISK — Water Level Receding</span>`;
+
+      statsHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title warning">🌊 Water Level & Severity</div>
+          <div class="forecast-card-stat" style="color:#e65100;">4.10 m &bull; ALERT / MODERATE (3.50m &ndash; 4.19m)</div>
+          <div class="forecast-card-desc">
+            <strong>Road Water Depth:</strong> 10 &ndash; 18 cm (Receding rapidly into stormwater culverts)<br>
+            <strong>Sponge Retention:</strong> 68% capacity (~54,400 m³ controlled discharge)<br>
+            <strong>Status:</strong> River crest passed; RCBC box culverts discharging into retention ponds
+          </div>
+        </div>
+      `;
+
+      whereFloodedHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title warning">📍 Where Will Be Flooded</div>
+          <div class="forecast-card-desc">
+            &bull; <strong>BBR Wetland Lake:</strong> Returning within designated lake containment banks<br>
+            &bull; <strong>Jalan Makyong:</strong> Residual ponding ~12 cm on road shoulders<br>
+            &bull; <strong>Persiaran Sungai Keramat:</strong> Clear of deep standing water
+          </div>
+        </div>
+      `;
+
+      unsafeRoutesHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title warning">🚫 Which Routes Are Unsafe</div>
+          <div class="forecast-card-desc">
+            <div style="margin-bottom:6px;"><span class="forecast-route-tag mod">MODERATE RISK</span> <strong>16 mins Route:</strong> Water receding (10–15 cm). Passable with caution for emergency vehicles.</div>
+            <div style="margin-bottom:6px;"><span class="forecast-route-tag safe">SAFE</span> <strong>15 mins Safe Route:</strong> Fully drained, open and safe.</div>
+            <div><span class="forecast-route-tag safe">SAFE</span> <strong>18 mins South Bypass:</strong> Completely clear and dry.</div>
+          </div>
+        </div>
+      `;
+    }
+  } else {
+    // 11:00 AM slot onwards (t >= 105)
+    const isModerateShifted = (t < 135 && state.forecastShifted);
+    const clockStr = formatClockTime(t);
+
+    if (isModerateShifted) {
+      // Shifted to Moderate from Safe
+      ui.eta.textContent = "Forecast Condition";
+      ui.dist.textContent = `${clockStr} (Moderate)`;
+      ui.sub.innerHTML = `<span class="badge mod" style="background:#fff3e0; color:#e65100; border:1px solid #ffcc80; font-weight:700;">⚠️ MODERATE RISK — Delayed Runoff Receding</span>`;
+
+      statsHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title warning">🌊 Water Level & Severity</div>
+          <div class="forecast-card-stat" style="color:#e65100;">4.05 m &bull; ALERT / MODERATE (3.50m &ndash; 4.19m)</div>
+          <div class="forecast-card-desc">
+            <strong>Road Water Depth:</strong> 12 &ndash; 18 cm (Receding slowly, use caution)<br>
+            <strong>Sponge Retention:</strong> 64% capacity (~51,200 m³ discharging)<br>
+            <strong>Status:</strong> Extended storm drainage; water returning to culvert systems
+          </div>
+        </div>
+      `;
+
+      whereFloodedHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title warning">📍 Where Will Be Flooded</div>
+          <div class="forecast-card-desc">
+            &bull; <strong>Jalan Makyong:</strong> Residual shallow ponding on road edge<br>
+            &bull; <strong>BBR Wetland:</strong> High retention volume, active absorption
+          </div>
+        </div>
+      `;
+
+      unsafeRoutesHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title warning">🚫 Which Routes Are Unsafe</div>
+          <div class="forecast-card-desc">
+            <div style="margin-bottom:6px;"><span class="forecast-route-tag mod">MODERATE CAUTION</span> <strong>16 mins Route:</strong> Surface puddles remaining. Drive cautiously.</div>
+            <div><span class="forecast-route-tag safe">SAFE</span> <strong>15 mins & 18 mins Corridors:</strong> Elevated roads clear and dry.</div>
+          </div>
+        </div>
+      `;
+    } else {
+      // Normal baseline / 11:30 AM onwards: Safe, cleared
+      ui.eta.textContent = "Forecast Condition";
+      ui.dist.textContent = `${clockStr} (Safe)`;
+      ui.sub.innerHTML = `<span class="badge ok" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; font-weight:700;">✅ SAFE — Flood Receded, Roads Clear</span>`;
+
+      statsHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title safe">🌊 Water Level & Severity</div>
+          <div class="forecast-card-stat" style="color:#2e7d32;">3.25 m &bull; NORMAL / SAFE (&lt;3.50m)</div>
+          <div class="forecast-card-desc">
+            <strong>Road Water Depth:</strong> 0 cm (All road segments dry and fully accessible)<br>
+            <strong>Sponge Retention:</strong> 22% capacity (~17,600 m³ safe buffer)<br>
+            <strong>Status:</strong> Stormwater successfully contained by BBR Sponge Township infrastructure
+          </div>
+        </div>
+      `;
+
+      whereFloodedHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title safe">📍 Where Will Be Flooded</div>
+          <div class="forecast-card-desc">
+            &bull; <strong>Zero Flooding:</strong> All residential streets and arterial roads clear<br>
+            &bull; <strong>Bandar Bukit Raja Wetland:</strong> Normal operational water level
+          </div>
+        </div>
+      `;
+
+      unsafeRoutesHtml = `
+        <div class="forecast-card-item">
+          <div class="forecast-card-title safe">🚫 Which Routes Are Unsafe</div>
+          <div class="forecast-card-desc">
+            <div><span class="forecast-route-tag safe">ALL ROUTES SAFE</span> All 3 corridors (15 mins, 16 mins, 18 mins) are 100% open, clear, and safe to navigate.</div>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  ui.steps.innerHTML = `
+    <div class="forecast-briefing">
+      ${statsHtml}
+      ${whereFloodedHtml}
+      ${unsafeRoutesHtml}
+    </div>
+  `;
 }
 
 // ---------------- Main update: recolour roads and areas, recompute the route
@@ -810,8 +1664,10 @@ function update(fromTick) {
       names = new Map(path.edgeIds.map(id => { const e = g.edges.get(id); return [e.baseId || id, roadLabel(e)]; }));
       path.parts = path.edgeIds.map(id => ({ base: g.edges.get(id).baseId || id, length: g.edges.get(id).length }));
 
-      // Generate 2 or 3 suggested alternative routes that avoid high risk
-      state.altRoutes = generateAlternativeRoutes(g, path, risk, T, mode);
+      // Generate 2 or 3 suggested alternative routes that avoid high risk at t=0 or initialize
+      if (t === 0 || !state.altRoutes || state.altRoutes.length === 0) {
+        state.altRoutes = generateAlternativeRoutes(g, path, risk, T, mode);
+      }
     } else {
       state.altRoutes = [];
     }
@@ -894,16 +1750,62 @@ function update(fromTick) {
   end.append(endDot, endTxt, document.createElement("small"));
   ui.steps.appendChild(end);
 
-  // Live reroute message
+  // Live reroute message (only on present 9:00 AM navigation; never on forecasted times)
   const key = baseIds.join(",");
-  if (fromTick && state.lastRouteKey && state.lastRouteKey !== key) {
+  if (t === 0 && fromTick && state.lastRouteKey && state.lastRouteKey !== key) {
     const cut = state.lastEdges.find(id => (risk.get(id) || 0) >= moderate && !baseIds.includes(id));
     const cutName = cut && (state.lastNames.get(cut) || "A road on your route");
     toast(cut ? `Route updated: ${cutName} is ${(risk.get(cut) || 0) >= high ? "flooding" : "at risk"}. New route ${mins} min.`
               : "Route updated to avoid rising water.");
   }
   state.lastRouteKey = key; state.lastEdges = baseIds; state.lastNames = names;
+
+  state.primaryRouteLine = line;
+  const pCoords = line.geometry.coordinates;
+  state.primaryAnchorCoord = pCoords[Math.floor(pCoords.length * 0.45)] || pCoords[0];
+  state.primaryRouteData = {
+    line,
+    mins: 15,
+    totalLengthM,
+    stepList,
+    baseIds,
+    names,
+    T
+  };
+
+  // Always render the primary safe route (line) so it is visible and dynamically updating
   map.getSource("fs-route").setData(line);
+  map.getSource("fs-connector").setData(emptyFC);
+
+  let currentSafeMins = 15;
+  let currentSafeSub = "";
+  if (t < 15) {
+    currentSafeMins = 15;
+    currentSafeSub = '<span class="badge ok" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7;">15 mins safe route active • 2 moderate alternatives (shaded)</span>';
+  } else if (t < 25) {
+    currentSafeMins = 17;
+    currentSafeSub = '<span class="badge ok" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7;">17 mins safe detour active • Bypassing rising surface water</span>';
+  } else if (t < 75) {
+    currentSafeMins = t >= 45 ? 24 : 21;
+    currentSafeSub = '<span class="badge danger" style="background:#ffebee; color:#c62828; border:1px solid #ef9a9a; font-weight:700;">🚨 SAFE ELEVATED BYPASS • 16 mins Wetland route completely inundated (40–58cm)</span>';
+  } else if (t < 105) {
+    currentSafeMins = state.forecastShifted ? 22 : 18;
+    currentSafeSub = state.forecastShifted
+      ? '<span class="badge danger" style="background:#ffebee; color:#c62828; border:1px solid #ef9a9a;">🚨 Extended flood crest active • Elevated bypass in effect</span>'
+      : '<span class="badge mod" style="background:#fff3e0; color:#e65100; border:1px solid #ffcc80;">⚠️ Water receding into RCBC box culverts • Routes reopening</span>';
+  } else {
+    currentSafeMins = 15;
+    currentSafeSub = '<span class="badge ok" style="background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7;">✅ All routes clear & fully safe • Floodwaters discharged</span>';
+  }
+
+  ui.eta.textContent = `${currentSafeMins} min`;
+  ui.dist.textContent = `${fmtLen(totalLengthM)} ${mode === "drive" ? "driving" : "walking"}`;
+  ui.sub.innerHTML = currentSafeSub;
+
+  if (t > 0 && state.predictActive && (!ui.topFfPanel || ui.topFfPanel.hidden)) {
+    renderForecastBriefing(t);
+  }
+
   updateMeta();
 
   // Update Prediction & Alternative Routes visual layers if active
@@ -915,7 +1817,7 @@ function showNoRoute(title, sub, warn, fromTick, tickToast) {
   if (title === "Outside the mapped area" || title === "You’re there") map.getSource("fs-connector").setData(emptyFC);
   ui.eta.textContent = title; ui.dist.textContent = ""; ui.sub.textContent = sub; ui.steps.innerHTML = "";
   if (warn) { ui.warn.textContent = warn; ui.warn.hidden = false; }
-  if (fromTick && state.lastRouteKey && tickToast) toast(tickToast);
+  if (state.t === 0 && fromTick && state.lastRouteKey && tickToast) toast(tickToast);
   state.lastRouteKey = null; state.lastEdges = [];
   state.altRoutes = [];
   updateMeta();
@@ -923,14 +1825,16 @@ function showNoRoute(title, sub, warn, fromTick, tickToast) {
 }
 
 function updateMeta() {
-  const sc = state.scenario;
-  ui.meta.textContent = state.hasRain
-    ? `Scenario: ${sc.name}${sc.synthetic ? " (synthetic)" : ""}. Generated ${new Date(sc.generated).toLocaleString()}.`
-    : "No rain yet. Select a forecast time to view simulated conditions.";
+  // Clear the generic scenario / synthetic timestamp text completely as requested
+  ui.meta.textContent = "";
 
   // Update Top Middle Current Time Display
   if (ui.topTimeVal) {
-    ui.topTimeVal.textContent = formatClockTime(state.t);
+    if (state.timelineMode === "q4_2024" && state.q4Data && state.q4Data[state.q4CurrentIndex]) {
+      ui.topTimeVal.textContent = state.q4Data[state.q4CurrentIndex].date_display;
+    } else {
+      ui.topTimeVal.textContent = formatClockTime(state.t);
+    }
   }
 }
 
@@ -957,7 +1861,7 @@ $("gpsBtn").addEventListener("click", async () => {
 });
 $("swapBtn").addEventListener("click", () => { const a = state.from; setFrom(state.to, false); setTo(a); });
 
-// Predict Button & Forecast Time Selection (Bottom Middle)
+// Predict Button & FloodShield Evacuation Prioritisation (Bottom Middle)
 if (ui.predictBtn) {
   ui.predictBtn.addEventListener("click", () => {
     state.predictActive = !state.predictActive;
@@ -966,25 +1870,57 @@ if (ui.predictBtn) {
       ui.predictTimePopup.hidden = !state.predictActive;
     }
     if (state.predictActive) {
-      selectForecastTime(state.selectedForecastMin && state.selectedForecastMin > 0 ? state.selectedForecastMin : 30);
-      toast("Flood prediction active: select a forecast time (9:30 AM, 10:00 AM, 10:30 AM, 11:00 AM)");
-    } else {
-      selectForecastTime(0);
-      toast("Prediction closed: Current condition (9:00 AM baseline)");
+      updatePredictModalView();
+      toast("FloodShield: Active Evacuation Window Analysis & Area Flood Forecast");
     }
   });
 }
 
-document.querySelectorAll(".time-chip").forEach(chip => {
-  chip.addEventListener("click", () => {
-    const min = parseInt(chip.dataset.min, 10);
-    state.predictActive = min > 0;
-    if (ui.predictBtn) {
-      ui.predictBtn.setAttribute("aria-pressed", String(state.predictActive));
+// Initialise FloodShield predictions
+updatePredictModalView();
+
+// Manual Fast Forward Slide Through Controls (Next to Current Time)
+if (ui.topFfBtn && ui.topFfPanel) {
+  ui.topFfBtn.addEventListener("click", () => {
+    const isHidden = ui.topFfPanel.hidden;
+    ui.topFfPanel.hidden = !isHidden;
+    ui.topFfBtn.setAttribute("aria-pressed", String(isHidden));
+    if (isHidden && ui.q4Slider) {
+      ui.q4Slider.focus();
     }
-    selectForecastTime(min);
+  });
+}
+
+if (ui.ffSlider) {
+  ui.ffSlider.addEventListener("input", e => {
+    const min = parseInt(e.target.value, 10);
+    applyTimeScrub(min);
+  });
+}
+
+// Q4 2024 JPS Telemetry Scrubber & Mode Toggle
+if (ui.timelineModeBtn) {
+  ui.timelineModeBtn.addEventListener("click", () => {
+    toggleTimelineMode();
+  });
+}
+
+if (ui.q4Slider) {
+  ui.q4Slider.addEventListener("input", e => {
+    const idx = parseInt(e.target.value, 10);
+    applyQ4Telemetry(idx);
+  });
+}
+
+document.querySelectorAll(".q4-landmark-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const hr = parseInt(btn.dataset.hour, 10);
+    applyQ4Telemetry(hr);
   });
 });
+
+// Pre-load Q4 2024 telemetry dataset
+loadQ4TelemetryData();
 
 // Legend Button & Popup Toggle (Bottom Right)
 if (ui.legendBtn && ui.legendPopup) {

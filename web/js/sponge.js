@@ -27,7 +27,7 @@ export const MSMA_THRESHOLDS = {
 export function getMsmaStatus(pct) {
   if (pct >= MSMA_THRESHOLDS.danger) return { key: "danger", label: "Danger / Bahaya (Overflowing)", color: "#ff1744", badge: "badge-danger" };
   if (pct >= MSMA_THRESHOLDS.warning) return { key: "warning", label: "Warning / Amar (Near Capacity)", color: "#ff9100", badge: "badge-warning" };
-  if (pct >= MSMA_THRESHOLDS.alert) return { key: "alert", label: "Alert / Waspada (Storage Active)", color: "#76ff03", badge: "badge-alert" };
+  if (pct >= MSMA_THRESHOLDS.alert) return { key: "alert", label: "Moderate Risk (Storage Active)", color: "#ff9100", badge: "badge-warning" };
   return { key: "normal", label: "Normal / Safe (Absorbing)", color: "#00e5ff", badge: "badge-safe" };
 }
 
@@ -328,18 +328,18 @@ export function filterSpongeCategory(category) {
 // ---------------- Township Retention Summary for Real BBR Retention System (~80,000 m3)
 export function getTownshipSpongeSummary(t, rainMmHr = 60) {
   const maxCapacityM3 = 80000;
-  let fillPct = 18;
+  let fillPct = 68; // 9:00 AM Present condition: Moderate Risk (68%)
 
   if (t <= 5) {
-    fillPct = 18;
+    fillPct = 68; // 9:00 AM (Present): Moderate risk
   } else if (t <= 30) {
-    fillPct = Math.round(18 + 70 * ((t - 5) / 25.0)); // 88% at t=30 (9:30 AM)
+    fillPct = Math.round(68 + 20 * ((t - 5) / 25.0)); // 88% at t=30 (9:30 AM Flooded)
   } else if (t <= 60) {
-    fillPct = Math.round(88 - 4 * ((t - 30) / 30.0));  // 84% at t=60 (10:00 AM)
+    fillPct = Math.round(88 - 4 * ((t - 30) / 30.0));  // 84% at t=60 (10:00 AM Flooded)
   } else if (t <= 90) {
-    fillPct = Math.round(84 - 22 * ((t - 60) / 30.0)); // 62% at t=90 (10:30 AM)
+    fillPct = Math.round(84 - 16 * ((t - 60) / 30.0)); // 68% at t=90 (10:30 AM Moderate)
   } else {
-    fillPct = Math.max(20, Math.round(62 - 42 * ((t - 90) / 30.0))); // 20% at t=120 (11:00 AM)
+    fillPct = Math.max(22, Math.round(68 - 46 * ((t - 90) / 30.0))); // 22% at t=120 (11:00 AM Safe)
   }
 
   const storedM3 = Math.round(maxCapacityM3 * (fillPct / 100.0));

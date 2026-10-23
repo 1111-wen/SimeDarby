@@ -19,11 +19,67 @@
   <div class="app">
     <div id="map" aria-label="Map showing flood risk and your route"></div>
 
-    <!-- Top Middle Current Time Display (Default 9:00 AM) -->
-    <div class="top-time-bar" id="topTimeBar" aria-label="Current time">
-      <span class="time-clock-icon">🕒</span>
-      <span class="time-label">Current Time:</span>
-      <strong class="time-value" id="topTimeVal">9:00 AM</strong>
+    <!-- Top Middle Current Time Display & JPS Telemetry Controller -->
+    <div class="top-time-wrapper" id="topTimeWrapper">
+      <div class="top-time-bar" id="topTimeBar" aria-label="Current time">
+        <span class="time-clock-icon">🕒</span>
+        <span class="time-label">Current Time:</span>
+        <strong class="time-value" id="topTimeVal">30/11/2024 14:00</strong>
+        <span class="top-time-divider" aria-hidden="true"></span>
+        <button type="button" class="top-ff-btn" id="topFfBtn" aria-pressed="false" title="Toggle 25/11/2024 to 05/12/2024 Sg. Binjai Telemetry Scrubber">
+          <span class="top-ff-icon">🌊</span>
+          <span class="top-ff-label">25/11 – 05/12/2024</span>
+        </button>
+      </div>
+
+      <!-- 25/11/2024 to 05/12/2024 Sg. Binjai JPS Telemetry Scrubber Panel -->
+      <div class="top-ff-panel" id="topFfPanel" hidden>
+        <div class="ff-header">
+          <span class="ff-badge q4-badge">🌊 SG. BINJAI DI PEKAN MERU (25/11/2024 00:00 – 05/12/2024 00:00)</span>
+        </div>
+        <div class="q4-live-readout" id="q4LiveReadout">
+          <span class="q4-readout-clock">🕒</span>
+          <strong id="q4ReadoutVal">29/11/2024 04:00 (Peak Flood Crest 4.76m)</strong>
+        </div>
+        <div class="ff-slider-row">
+          <span class="ff-tick-label">25/11 00:00</span>
+          <input type="range" class="ff-range-slider" id="q4Slider" min="0" max="240" step="1" value="100" aria-label="25 Nov to 5 Dec 2024 Sg. Binjai telemetry scrubber">
+          <span class="ff-tick-label">05/12 00:00</span>
+        </div>
+        <!-- Quick Landmark Jumps -->
+        <div class="q4-landmarks">
+          <button type="button" class="q4-landmark-btn" data-hour="0" title="25 Nov 2024: Baseline Normal Flow">🌤️ 25 Nov (Normal)</button>
+          <button type="button" class="q4-landmark-btn" data-hour="71" title="27 Nov 2024 23:00: Crosses JPS Alert Level (3.52m)">⚠️ 27 Nov (Alert)</button>
+          <button type="button" class="q4-landmark-btn" data-hour="92" title="28 Nov 2024 20:00: Crosses JPS Danger Level (4.62m)">🌧️ 28 Nov (Danger)</button>
+          <button type="button" class="q4-landmark-btn danger active" data-hour="100" title="29 Nov 2024 04:00: Historical Peak Flood Crest (4.76m)">🚨 29 Nov (Peak 4.76m)</button>
+          <button type="button" class="q4-landmark-btn" data-hour="144" title="01 Dec 2024: Rapid Post-Surge Recession">📉 01 Dec (Recession)</button>
+          <button type="button" class="q4-landmark-btn" data-hour="240" title="05 Dec 2024: Safe Baseline Flow">🌊 05 Dec (Safe Flow)</button>
+        </div>
+        <!-- Live Comparison Telemetry Cards for Sg. Binjai Only -->
+        <div class="q4-telemetry-hud" id="q4TelemetryHud">
+          <div class="q4-hud-col actual-col">
+            <span class="q4-col-title">📍 Actual Water Level at Sg. Binjai (t)</span>
+            <div class="q4-stat-row"><span>Sg. Binjai:</span> <strong id="q4ActualLevel">4.76 m</strong> <span class="sponge-badge badge-danger" id="q4ActualBadge" style="font-size:10px; padding:1px 6px;">DANGER</span></div>
+            <div class="q4-stat-row"><span>Rainfall:</span> <strong id="q4ActualRain">32.0 mm/h</strong></div>
+            <div class="q4-stat-row"><span>Road Surface:</span> <strong id="q4RoadDepth">Submerged 55cm (Impassable)</strong></div>
+          </div>
+          <div class="q4-hud-col pred-col">
+            <span class="q4-col-title">🔮 XGBoost 3h Forecast for Sg. Binjai (t+3h)</span>
+            <div class="q4-stat-row"><span>Forecast Level:</span> <strong id="q4PredLevel">4.72 m</strong> <span class="sponge-badge badge-danger" id="q4PredBadge" style="font-size:10px; padding:1px 6px;">DANGER</span></div>
+            <div class="q4-stat-row"><span>Persistence:</span> <strong id="q4RfLevel">4.76 m (lags 3h)</strong></div>
+            <div class="q4-stat-row"><span>Lead Time:</span> <strong style="color:#2563eb;">3h Early Warning (Zero Lag)</strong></div>
+          </div>
+        </div>
+
+        <!-- Hydrology Explainer Box: Why 3 Stations Predict 1 River -->
+        <details class="binjai-explainer" style="margin-top:6px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:6px 10px; font-size:11px;">
+          <summary style="font-weight:700; color:#1d4ed8; cursor:pointer;">💡 How 3 Stations Predict Water Level at Sungai Binjai Only</summary>
+          <div style="margin-top:6px; color:#334155; line-height:1.45;">
+            <p style="margin:2px 0 5px;"><strong>1. Connected River Basin Physics:</strong> Sg. Binjai is located upstream in Pekan Meru. Sg. Rasau and Sg. Klang are downstream water bodies. When downstream stations are full, upstream Sg. Binjai cannot drain away quickly, causing water to pile up at Pekan Meru (<em>Downstream Backwater Effect</em>).</p>
+            <p style="margin:2px 0;"><strong>2. Multi-Station XGBoost Translation:</strong> By evaluating upstream rainfall + downstream blockage patterns across thousands of historical hours, the machine learning model accurately calculates a single 3-hour ahead forecast for our target point: <strong>Sungai Binjai</strong>.</p>
+          </div>
+        </details>
+      </div>
     </div>
 
     <!-- Left Navigation & Route Details Sidebar Stack -->
@@ -115,18 +171,13 @@
 
     <div class="toast" id="toast" role="status" aria-live="assertive"></div>
 
-    <!-- Predict Button & Forecast Time Selection at Bottom Middle of the Page -->
-    <div class="predict-bar" id="predictBar" role="region" aria-label="Flood Prediction Controls">
+    <!-- Predict Button & FloodShield Evacuation Prioritisation Panel -->
+    <div class="predict-bar" id="predictBar" role="region" aria-label="FloodShield Evacuation Prioritisation Controls">
       <div class="predict-time-popup" id="predictTimePopup" hidden>
-        <div class="time-chips" role="radiogroup" aria-label="Forecast times">
-          <button type="button" class="time-chip" data-time="9:00 AM" data-min="0">9:00 AM</button>
-          <button type="button" class="time-chip active" data-time="9:30 AM" data-min="30">9:30 AM <span class="chip-status danger">Flooded</span></button>
-          <button type="button" class="time-chip" data-time="10:00 AM" data-min="60">10:00 AM <span class="chip-status danger">Flooded</span></button>
-          <button type="button" class="time-chip" data-time="10:30 AM" data-min="90">10:30 AM <span class="chip-status warning">Moderate</span></button>
-          <button type="button" class="time-chip" data-time="11:00 AM" data-min="120">11:00 AM <span class="chip-status safe">Safe</span></button>
-        </div>
+        <div id="predictPanelSlot"></div>
       </div>
-      <button type="button" class="predict-btn-main" id="predictBtn" aria-pressed="false" title="Toggle Flood Prediction">
+
+      <button type="button" class="predict-btn-main" id="predictBtn" aria-pressed="false" title="Toggle FloodShield Area Flood & Evacuation Prediction">
         <span class="predict-btn-icon">🔮</span>
         <span class="predict-btn-label">Predict</span>
       </button>
