@@ -973,14 +973,23 @@ export function formatForecastOffsetTime(baseStr, addMins = 0) {
   return `+${addMins}m`;
 }
 
-export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentTimestampStr, activeLeadMin = 0, baseTimestampStr = currentTimestampStr) {
+export function renderPredictPanelHtml(
+  scheduleList,
+  currentWl,
+  predWl,
+  currentTimestampStr,
+  activeLeadMin = 0,
+  baseTimestampStr = currentTimestampStr,
+  activeCategory = "all"
+) {
   const floodedCount = scheduleList.filter(z => z.status === "CURRENT_FLOOD").length;
   const highRiskCount = scheduleList.filter(z => z.status === "PREDICTED_FLOOD").length;
   const modCount = scheduleList.filter(z => z.status === "WARNING").length;
+  const safeCount = scheduleList.filter(z => z.status === "SAFE").length;
 
   const leadOffsets = [0, 30, 60, 90, 120];
 
-  const chipsHtml = leadOffsets.map(mins => {
+  const timeChipsHtml = leadOffsets.map(mins => {
     const formattedTime = formatForecastOffsetTime(baseTimestampStr, mins);
     const isActive = activeLeadMin === mins;
     const label = mins === 0 ? `${formattedTime} (Current)` : formattedTime;
@@ -991,71 +1000,69 @@ export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentT
     `;
   }).join("");
 
-  const totalAffected = floodedCount + highRiskCount;
-  let bannerHtml = "";
-  if (totalAffected > 0) {
-    bannerHtml = `
-      <div class="predict-summary-banner banner-alert">
-        <span>🚨</span>
-        <div>
-          <strong>${totalAffected} Area(s) Flooded / High Risk</strong>
-          <small style="display:block; font-size:11px; opacity:0.9;">${floodedCount} Flooded &bull; ${highRiskCount} High Risk &bull; ${modCount} Moderate</small>
-        </div>
-      </div>
-    `;
-  } else if (modCount > 0) {
-    bannerHtml = `
-      <div class="predict-summary-banner" style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d;">
-        <span>⚠️</span>
-        <div>
-          <strong>Surface Runoff / Ponding Active</strong>
-          <small style="display:block; font-size:11px;">${modCount} area(s) moderate ponding &bull; Roads passable</small>
-        </div>
+  // Category Filter Chips under the time selection (matches Flood Risk Sections aesthetic)
+  const catChipsHtml = `
+    <div class="risk-filter-chips predict-cat-chips" role="group" aria-label="Filter areas by risk status">
+      <button type="button" class="risk-chip ${activeCategory === 'all' ? 'active' : ''}" data-cat="all">All (${scheduleList.length})</button>
+      <button type="button" class="risk-chip chip-flooded ${activeCategory === 'flooded' ? 'active' : ''}" data-cat="flooded">🔴 Flooded (${floodedCount})</button>
+      <button type="button" class="risk-chip chip-high ${activeCategory === 'high' ? 'active' : ''}" data-cat="high">🚨 High Risk (${highRiskCount})</button>
+      <button type="button" class="risk-chip chip-moderate ${activeCategory === 'moderate' ? 'active' : ''}" data-cat="moderate">🟠 Moderate (${modCount})</button>
+      <button type="button" class="risk-chip chip-safe ${activeCategory === 'safe' ? 'active' : ''}" data-cat="safe">🟢 Safe (${safeCount})</button>
+    </div>
+  `;
+
+  // Filter cards by active category
+  let filteredList = scheduleList;
+  if (activeCategory === "flooded") filteredList = scheduleList.filter(z => z.status === "CURRENT_FLOOD");
+  else if (activeCategory === "high") filteredList = scheduleList.filter(z => z.status === "PREDICTED_FLOOD");
+  else if (activeCategory === "moderate") filteredList = scheduleList.filter(z => z.status === "WARNING");
+  else if (activeCategory === "safe") filteredList = scheduleList.filter(z => z.status === "SAFE");
+
+  let cardsContent = "";
+  if (filteredList.length === 0) {
+    const categoryNames = {
+      flooded: "currently flooded",
+      high: "at high risk",
+      moderate: "with moderate ponding",
+      safe: "safe"
+    };
+    cardsContent = `
+      <div style="text-align:center; padding:18px 8px; color:var(--muted); font-size:12px;">
+        ✅ No areas ${categoryNames[activeCategory] || "found"} at ${currentTimestampStr}.
       </div>
     `;
   } else {
-    bannerHtml = `
-      <div class="predict-summary-banner banner-safe">
-        <span>✅</span>
-        <div>
-          <strong>All 18 Areas Dry & Safe</strong>
-          <small style="display:block; font-size:11px;">Normal river stage &bull; No road overtopping</small>
-        </div>
-      </div>
-    `;
-  }
+    cardsContent = filteredList.map(item => {
+      let cardCls = "border-safe";
+      if (item.status === "CURRENT_FLOOD") cardCls = "border-danger";
+      else if (item.status === "PREDICTED_FLOOD") cardCls = "border-danger";
+      else if (item.status === "WARNING") cardCls = "border-warning";
 
-  // Cards for all areas
-  const cardsHtml = scheduleList.map(item => {
-    let cardCls = "border-safe";
-    if (item.status === "CURRENT_FLOOD") cardCls = "border-danger";
-    else if (item.status === "PREDICTED_FLOOD") cardCls = "border-danger";
-    else if (item.status === "WARNING") cardCls = "border-warning";
-
-    return `
-      <div class="area-sched-card ${cardCls}" data-zone-id="${item.id}" data-lat="${item.coord[1]}" data-lng="${item.coord[0]}" title="Click to view ${item.name} on map">
-        <div class="area-sched-head">
-          <div class="area-sched-title">
-            <span class="area-icon">${item.icon}</span>
-            <strong>${item.shortName}</strong>
-            <small class="area-elev">Elev: ${item.groundElevationM.toFixed(1)}m | Trigger: ${item.riverFloodThresholdM.toFixed(1)}m</small>
+      return `
+        <div class="area-sched-card ${cardCls}" data-zone-id="${item.id}" data-lat="${item.coord[1]}" data-lng="${item.coord[0]}" title="Click to view ${item.name} on map">
+          <div class="area-sched-head">
+            <div class="area-sched-title">
+              <span class="area-icon">${item.icon}</span>
+              <strong>${item.shortName}</strong>
+              <small class="area-elev">Elev: ${item.groundElevationM.toFixed(1)}m | Trigger: ${item.riverFloodThresholdM.toFixed(1)}m</small>
+            </div>
+            <span class="sponge-badge ${item.badgeClass}">${item.badgeText}</span>
           </div>
-          <span class="sponge-badge ${item.badgeClass}">${item.badgeText}</span>
+          <div class="area-sched-time">
+            <span class="time-clock-ico">⏱️</span>
+            <strong>${item.timeText}</strong>
+            ${item.depthCm > 0 ? `<span class="depth-tag">🌊 ${item.depthCm} cm depth</span>` : '<span class="depth-tag" style="background:#dcfce7; color:#15803d; border-color:#86efac;">Dry</span>'}
+            <span class="evac-spare-tag ${item.spareTimeMin <= 15 ? 'spare-danger' : 'spare-safe'}">
+              🏃 Evac: ${item.spareTimeMin <= 0 ? '0m (Submerged)' : item.spareTimeMin + 'm window'}
+            </span>
+          </div>
+          <div class="area-sched-action">
+            ${item.actionText}
+          </div>
         </div>
-        <div class="area-sched-time">
-          <span class="time-clock-ico">⏱️</span>
-          <strong>${item.timeText}</strong>
-          ${item.depthCm > 0 ? `<span class="depth-tag">🌊 ${item.depthCm} cm depth</span>` : '<span class="depth-tag" style="background:#dcfce7; color:#15803d; border-color:#86efac;">Dry</span>'}
-          <span class="evac-spare-tag ${item.spareTimeMin <= 15 ? 'spare-danger' : 'spare-safe'}">
-            🏃 Evac: ${item.spareTimeMin <= 0 ? '0m (Submerged)' : item.spareTimeMin + 'm window'}
-          </span>
-        </div>
-        <div class="area-sched-action">
-          ${item.actionText}
-        </div>
-      </div>
-    `;
-  }).join("");
+      `;
+    }).join("");
+  }
 
   return `
     <div class="floodshield-modal-content">
@@ -1071,28 +1078,27 @@ export function renderPredictPanelHtml(scheduleList, currentWl, predWl, currentT
         <button type="button" class="risk-panel-close" id="predictCloseBtn" aria-label="Close prediction">&times;</button>
       </div>
 
-      <!-- Time Selection (FIRST) -->
+      <!-- 1. Forecast Time Selection -->
       <div class="predict-time-section">
         <div class="predict-time-header">
           <span>⏱️</span>
           <span>Select Forecast Time Window:</span>
         </div>
         <div class="forecast-chips-grid">
-          ${chipsHtml}
+          ${timeChipsHtml}
         </div>
       </div>
 
-      <!-- Summary Banner for selected time -->
-      ${bannerHtml}
+      <!-- 2. Risk Category Filter Chips (Under Forecast Time Selection) -->
+      ${catChipsHtml}
 
-      <!-- Detailed All-Area Inundation Conditions List -->
-      <div class="area-schedule-cards" style="max-height: 44vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
-        ${cardsHtml}
+      <!-- 3. Detailed All-Area Inundation Conditions List -->
+      <div class="area-schedule-cards" style="max-height: 44vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; margin-top:2px;">
+        ${cardsContent}
       </div>
     </div>
   `;
 }
-
 
 /**
  * Generate formatted HTML for the "Area Flood Schedule" container (used inside Q4 drawer)

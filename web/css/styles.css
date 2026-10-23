@@ -420,6 +420,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-v
   box-shadow: 0 2px 8px rgba(91, 60, 196, 0.35);
 }
 
+.predict-cat-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
 .predict-summary-banner {
   padding: 7px 10px;
   border-radius: 8px;

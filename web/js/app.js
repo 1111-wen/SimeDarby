@@ -1056,8 +1056,9 @@ function setForecastShift(shifted, toastUser = true) {
   }
 }
 
-function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin || 0) {
+function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin || 0, activeCategory = state.predictCategoryFilter || "all") {
   state.selectedForecastLeadMin = activeLeadMin;
+  state.predictCategoryFilter = activeCategory;
 
   let currentWl = 2.10, predWl = 2.50, timeLabel = "9:00 AM", baseTimeStr = "9:00 AM";
 
@@ -1102,17 +1103,27 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
   const schedule = computeAreaFloodSchedule(currentWl, predWl, timeLabel);
 
   if (ui.predictPanelSlot) {
-    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel, activeLeadMin, baseTimeStr);
+    ui.predictPanelSlot.innerHTML = renderPredictPanelHtml(schedule, currentWl, predWl, timeLabel, activeLeadMin, baseTimeStr, activeCategory);
     const closeBtn = document.getElementById("predictCloseBtn");
     if (closeBtn) closeBtn.onclick = () => closePredictModal();
 
-    // Bind forecast time chip clicks to scrub time and preview conditions
+    // Bind forecast time chip clicks
     ui.predictPanelSlot.querySelectorAll(".time-chip").forEach(chip => {
       chip.addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const lead = parseInt(chip.dataset.lead, 10);
-        updatePredictModalView(lead);
+        updatePredictModalView(lead, state.predictCategoryFilter);
+      });
+    });
+
+    // Bind risk category filter chips under time selection
+    ui.predictPanelSlot.querySelectorAll(".predict-cat-chips .risk-chip").forEach(chip => {
+      chip.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const cat = chip.dataset.cat;
+        updatePredictModalView(state.selectedForecastLeadMin, cat);
       });
     });
 
@@ -1124,16 +1135,42 @@ function updatePredictModalView(activeLeadMin = state.selectedForecastLeadMin ||
     bindAreaCardClicks(ui.q4AreaScheduleSlot);
   }
 
-  updateInundationMarkers(schedule);
+  // Update map polygons and pins according to activeCategory
+  updateAreaZonePolygons(schedule, activeCategory);
+
+  // Filter map pins according to activeCategory
+  let filteredSchedule = schedule;
+  if (activeCategory === "flooded") filteredSchedule = schedule.filter(z => z.status === "CURRENT_FLOOD");
+  else if (activeCategory === "high") filteredSchedule = schedule.filter(z => z.status === "PREDICTED_FLOOD");
+  else if (activeCategory === "moderate") filteredSchedule = schedule.filter(z => z.status === "WARNING");
+  else if (activeCategory === "safe") filteredSchedule = schedule.filter(z => z.status === "SAFE");
+
+  const filteredIds = new Set(filteredSchedule.map(f => f.id));
+  zoneMarkers.forEach(({ zone, el, popup }) => {
+    if (activeCategory === "all" || filteredIds.has(zone.id)) {
+      el.style.display = "";
+      el.style.opacity = "1";
+    } else {
+      el.style.display = "none";
+      if (popup && popup.isOpen && popup.isOpen()) popup.remove();
+    }
+  });
 }
 
 function closePredictModal() {
   state.predictActive = false;
+  state.predictCategoryFilter = "all";
   if (ui.predictBtn) ui.predictBtn.setAttribute("aria-pressed", "false");
   if (ui.predictTimePopup) {
     ui.predictTimePopup.hidden = true;
     ui.predictTimePopup.style.display = "none";
   }
+  // Restore all markers and polygons
+  zoneMarkers.forEach(({ el }) => {
+    el.style.display = "";
+    el.style.opacity = "1";
+  });
+  updateAreaZonePolygons(currentSchedule, "all");
 }
 
 function bindAreaCardClicks(container) {
