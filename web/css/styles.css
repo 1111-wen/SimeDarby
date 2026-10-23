@@ -3252,3 +3252,252 @@ details p { margin: 6px 0; }
   margin-top: 2px;
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.85);
 }
+
+/* Route Action Buttons (Start Navigation & Exit Route - Directly under 17min box) */
+.route-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 12px;
+  padding: 0;
+  width: 100%;
+}
+
+.btn-route-action {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 22px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-route-action:active {
+  transform: scale(0.96);
+}
+
+/* Start Button: Google Maps / Waze inspired Emerald Navigation */
+.btn-route-start {
+  background: #16a34a;
+  color: #ffffff;
+  border: 1.5px solid #15803d;
+  box-shadow: 0 3px 12px rgba(22, 163, 74, 0.35);
+}
+
+.btn-route-start:hover {
+  background: #15803d;
+  box-shadow: 0 5px 16px rgba(22, 163, 74, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-route-start.navigating {
+  background: #0284c7;
+  border-color: #0369a1;
+  box-shadow: 0 0 16px rgba(2, 132, 199, 0.5);
+  animation: navPulseGlow 2s infinite alternate;
+}
+
+@keyframes navPulseGlow {
+  0% { box-shadow: 0 0 8px rgba(2, 132, 199, 0.4); }
+  100% { box-shadow: 0 0 20px rgba(2, 132, 199, 0.8); }
+}
+
+/* Exit Button: Soft clean red danger tint */
+.btn-route-exit {
+  background: #ffffff;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+}
+
+.btn-route-exit:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.22);
+  transform: translateY(-1px);
+}
+
+:root[data-theme="dark"] .btn-route-exit,
+:root:not([data-theme="light"]) .btn-route-exit {
+  background: #2a1515;
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+
+.btn-action-icon {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+/* Live Turn-by-Turn Navigation HUD Banner (Floating Top Driving Guidance) */
+.nav-hud-banner {
+  position: absolute;
+  top: 66px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 36px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  min-width: 320px;
+  max-width: min(92vw, 540px);
+  animation: slideDownNav .3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+@keyframes slideDownNav {
+  from { opacity: 0; transform: translate(-50%, -15px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.nav-hud-banner[hidden] {
+  display: none !important;
+}
+
+.nav-hud-turn-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.5);
+}
+
+.nav-hud-turn-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-hud-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-hud-instruction {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.nav-hud-meta {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.nav-hud-eta {
+  color: #4ade80;
+  font-weight: 700;
+}
+
+.nav-hud-sep {
+  opacity: 0.5;
+}
+
+.nav-hud-dest {
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.nav-hud-stop-btn {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  border-radius: 18px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+
+.nav-hud-stop-btn:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #b91c1c;
+}
+
+/* Animated Navigation Vehicle Marker on Map */
+.nav-vehicle-marker {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-pulse-ring {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.28);
+  animation: navPulseRing 1.6s ease-out infinite;
+}
+
+@keyframes navPulseRing {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.nav-car-icon {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), 0 0 0 2.5px #2563eb;
+  z-index: 2;
+}
+
+/* Active Step Highlighting in Direction Sheet during Navigation */
+.steps li.step-active-nav {
+  background: #eff6ff;
+  border-left: 3px solid #2563eb;
+  padding-left: 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+:root[data-theme="dark"] .steps li.step-active-nav,
+:root:not([data-theme="light"]) .steps li.step-active-nav {
+  background: #1e293b;
+  border-left-color: #60a5fa;
+}

@@ -44,7 +44,17 @@ const ui = {
   q4RoadDepth: $("q4RoadDepth"),
   q4PredLevel: $("q4PredLevel"),
   q4PredBadge: $("q4PredBadge"),
-  q4RfLevel: $("q4RfLevel")
+  q4RfLevel: $("q4RfLevel"),
+  routeActionButtons: $("routeActionButtons"),
+  startRouteBtn: $("startRouteBtn"),
+  startRouteBtnText: $("startRouteBtnText"),
+  exitRouteBtn: $("exitRouteBtn"),
+  navHudBanner: $("navHudBanner"),
+  navHudInstruction: $("navHudInstruction"),
+  navHudEta: $("navHudEta"),
+  navHudDist: $("navHudDist"),
+  navHudDest: $("navHudDest"),
+  navHudStopBtn: $("navHudStopBtn")
 };
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const OFF_NETWORK_M = 400; // further than this from any mapped road = outside the mapped area
@@ -53,7 +63,7 @@ const state = {
   mode: CONFIG.defaultMode,
   graph: null, roads: null, places: [], scenarios: [], scenario: null,
   t: 0, hasRain: false, from: null, to: null, lastRouteKey: null, lastEdges: [], lastNames: new Map(),
-  watchId: null, storm: null, predictActive: false, predictTimeSelected: false, selectedForecastMin: 0, altRoutes: [],
+  watchId: null, storm: null, predictActive: false, isNavigating: false, predictTimeSelected: false, selectedForecastMin: 0, altRoutes: [],
   primaryRouteLine: null, primaryAnchorCoord: null, primaryRouteData: null,
   forecastShifted: false,
   timelineMode: "q4_2024",
@@ -556,6 +566,7 @@ async function loadData() {
 
 // ---------------- Trip
 function setFrom(p, run = true) {
+  if (state.isNavigating) stopNavigation(false);
   state.from = p; ui.fromIn.value = p.name; fromMarker.setLngLat(p.coord).addTo(map);
   state.lastRouteKey = null;
   if (run) {
@@ -564,6 +575,7 @@ function setFrom(p, run = true) {
   }
 }
 function setTo(p, run = true) {
+  if (state.isNavigating) stopNavigation(false);
   state.to = p; ui.toIn.value = p.name; toMarker.setLngLat(p.coord).addTo(map);
   state.lastRouteKey = null;
   if (run) {
@@ -1020,6 +1032,216 @@ function applyChosenAltRoute(alt, level = "moderate") {
 
   state.lastRouteKey = baseIds.join(","); state.lastEdges = baseIds; state.lastNames = names;
   map.getSource("fs-route").setData(line);
+  if (ui.routeActionButtons) ui.routeActionButtons.style.display = "flex";
+}
+
+// ---------------- Live Turn-by-Turn Safe Navigation & Exit Route Controller
+let navActive = false;
+let navAnimId = null;
+let navVehicleMarker = null;
+let navCurrentCoordIndex = 0;
+
+function calculateBearing(p1, p2) {
+  if (!p1 || !p2) return 0;
+  const lon1 = (p1[0] * Math.PI) / 180, lat1 = (p1[1] * Math.PI) / 180;
+  const lon2 = (p2[0] * Math.PI) / 180, lat2 = (p2[1] * Math.PI) / 180;
+  const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+function startNavigation() {
+  if (navActive) {
+    if (navVehicleMarker) {
+      const pos = navVehicleMarker.getLngLat();
+      map.easeTo({ center: [pos.lng, pos.lat], zoom: 17.5, pitch: 55, duration: 800 });
+      toast("🧭 Centered on navigation position");
+    }
+    return;
+  }
+
+  if (!state.primaryRouteLine || !state.to) {
+    toast("No active route to navigate. Choose a destination first.");
+    return;
+  }
+
+  const coords = state.primaryRouteLine.geometry?.coordinates;
+  if (!coords || coords.length < 2) {
+    toast("Route path coordinates unavailable for navigation.");
+    return;
+  }
+
+  navActive = true;
+  state.isNavigating = true;
+
+  if (ui.startRouteBtn) ui.startRouteBtn.classList.add("navigating");
+  if (ui.startRouteBtnText) ui.startRouteBtnText.textContent = "Navigating...";
+
+  if (ui.navHudBanner) {
+    ui.navHudBanner.hidden = false;
+    ui.navHudBanner.style.display = "flex";
+  }
+  if (ui.navHudEta) ui.navHudEta.textContent = ui.eta.textContent || "17 min";
+  if (ui.navHudDist) ui.navHudDist.textContent = ui.dist.textContent || "5.0 km";
+  if (ui.navHudDest) ui.navHudDest.textContent = state.to.shortName || state.to.name || "Safe PPS";
+
+  const firstLi = ui.steps.querySelector("li");
+  if (firstLi) {
+    firstLi.classList.add("step-active-nav");
+    const stepText = firstLi.querySelector("span:nth-child(2)")?.textContent;
+    if (ui.navHudInstruction && stepText) ui.navHudInstruction.textContent = stepText;
+  } else if (ui.navHudInstruction) {
+    ui.navHudInstruction.textContent = `Head toward ${state.to.name}`;
+  }
+
+  if (navVehicleMarker) navVehicleMarker.remove();
+  const el = document.createElement("div");
+  el.className = "nav-vehicle-marker";
+  el.innerHTML = `
+    <div class="nav-pulse-ring"></div>
+    <div class="nav-car-icon">
+      <svg viewBox="0 0 24 24" fill="#2563eb" width="20" height="20">
+        <polygon points="12 2 19 21 12 17 5 21"/>
+      </svg>
+    </div>
+  `;
+  navVehicleMarker = new maplibregl.Marker({ element: el, rotationAlignment: "map" })
+    .setLngLat(coords[0])
+    .addTo(map);
+
+  const initialBearing = calculateBearing(coords[0], coords[Math.min(3, coords.length - 1)]);
+  map.flyTo({
+    center: coords[0],
+    zoom: 17.5,
+    pitch: 55,
+    bearing: initialBearing,
+    duration: 1800,
+    essential: true
+  });
+
+  toast(`🧭 Navigation started: Following safe detour to ${state.to.name}`);
+
+  try {
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const ut = new SpeechSynthesisUtterance(`Navigation started. Proceed along safe flood bypass route to ${state.to.shortName || state.to.name}.`);
+      ut.rate = 1.05;
+      ut.volume = 0.8;
+      window.speechSynthesis.speak(ut);
+    }
+  } catch (_) {}
+
+  navCurrentCoordIndex = 0;
+  let lastTick = performance.now();
+
+  function navLoop(now) {
+    if (!navActive) return;
+    if (now - lastTick > 550) {
+      lastTick = now;
+      if (navCurrentCoordIndex < coords.length - 1) {
+        navCurrentCoordIndex++;
+        const curr = coords[navCurrentCoordIndex];
+        const nxt = coords[Math.min(navCurrentCoordIndex + 2, coords.length - 1)];
+        const b = calculateBearing(curr, nxt);
+
+        if (navVehicleMarker) {
+          navVehicleMarker.setLngLat(curr);
+          navVehicleMarker.setRotation(b);
+        }
+
+        if (navCurrentCoordIndex % 3 === 0) {
+          map.easeTo({
+            center: curr,
+            bearing: b,
+            pitch: 55,
+            duration: 800
+          });
+        }
+
+        const progress = navCurrentCoordIndex / coords.length;
+        const allLis = ui.steps.querySelectorAll("li");
+        if (allLis.length > 0) {
+          const actIdx = Math.min(Math.floor(progress * allLis.length), allLis.length - 1);
+          allLis.forEach((li, idx) => {
+            const isActive = idx === actIdx;
+            li.classList.toggle("step-active-nav", isActive);
+            if (isActive && ui.navHudInstruction) {
+              const txt = li.querySelector("span:nth-child(2)")?.textContent;
+              if (txt) ui.navHudInstruction.textContent = txt;
+            }
+          });
+        }
+      } else {
+        toast(`🎉 Safely arrived at ${state.to.name}!`);
+        stopNavigation(false);
+        return;
+      }
+    }
+    navAnimId = requestAnimationFrame(navLoop);
+  }
+
+  cancelAnimationFrame(navAnimId);
+  navAnimId = requestAnimationFrame(navLoop);
+}
+
+function stopNavigation(resetCamera = true) {
+  navActive = false;
+  state.isNavigating = false;
+  cancelAnimationFrame(navAnimId);
+
+  if (ui.startRouteBtn) ui.startRouteBtn.classList.remove("navigating");
+  if (ui.startRouteBtnText) ui.startRouteBtnText.textContent = "Start";
+
+  if (ui.navHudBanner) {
+    ui.navHudBanner.hidden = true;
+    ui.navHudBanner.style.display = "none";
+  }
+
+  if (navVehicleMarker) {
+    navVehicleMarker.remove();
+    navVehicleMarker = null;
+  }
+
+  const allLis = ui.steps.querySelectorAll("li");
+  allLis.forEach(li => li.classList.remove("step-active-nav"));
+
+  if (resetCamera) {
+    fitTripBounds();
+  }
+}
+
+function exitRoute() {
+  stopNavigation(false);
+
+  state.to = null;
+  ui.toIn.value = "";
+  toMarker.remove();
+
+  if (map.getSource("fs-route")) map.getSource("fs-route").setData(emptyFC);
+  if (map.getSource("fs-route-alt")) map.getSource("fs-route-alt").setData(emptyFC);
+  if (map.getSource("fs-connector")) map.getSource("fs-connector").setData(emptyFC);
+  altRouteMarkers.forEach(m => m.remove());
+  altRouteMarkers = [];
+
+  state.lastRouteKey = null;
+  state.lastEdges = [];
+  state.altRoutes = [];
+
+  ui.eta.textContent = "Route Exited";
+  ui.dist.textContent = "";
+  ui.sub.innerHTML = '<span style="color:#64748b; font-size:12.5px;">Destination cleared. Choose an emergency centre or enter a destination to plan a safe route.</span>';
+  ui.steps.innerHTML = "";
+  if (ui.warn) ui.warn.hidden = true;
+
+  if (ui.routeActionButtons) {
+    ui.routeActionButtons.style.display = "none";
+  }
+
+  if (state.from) {
+    map.easeTo({ center: state.from.coord, zoom: 14.5, pitch: 20 });
+  }
+
+  toast("Route exited");
 }
 
 // ---------------- Fast Forward & Time Scrub Simulation Controller
@@ -1966,6 +2188,7 @@ function update(fromTick) {
   ui.eta.textContent = `${currentSafeMins} min`;
   ui.dist.textContent = `${fmtLen(totalLengthM)} ${mode === "drive" ? "driving" : "walking"}`;
   ui.sub.innerHTML = currentSafeSub;
+  if (ui.routeActionButtons) ui.routeActionButtons.style.display = "flex";
 
   if (t > 0 && state.predictActive && (!ui.topFfPanel || ui.topFfPanel.hidden)) {
     renderForecastBriefing(t);
@@ -1978,6 +2201,8 @@ function update(fromTick) {
 }
 
 function showNoRoute(title, sub, warn, fromTick, tickToast) {
+  stopNavigation(false);
+  if (ui.routeActionButtons) ui.routeActionButtons.style.display = "none";
   map.getSource("fs-route").setData(emptyFC);
   if (title === "Outside the mapped area" || title === "You’re there") map.getSource("fs-connector").setData(emptyFC);
   ui.eta.textContent = title; ui.dist.textContent = ""; ui.sub.textContent = sub; ui.steps.innerHTML = "";
@@ -2025,6 +2250,26 @@ $("gpsBtn").addEventListener("click", async () => {
   } catch (err) { ui.note.textContent = err.message; }
 });
 $("swapBtn").addEventListener("click", () => { const a = state.from; setFrom(state.to, false); setTo(a); });
+
+// Start Navigation & Exit Route Action Buttons
+if (ui.startRouteBtn) {
+  ui.startRouteBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    startNavigation();
+  });
+}
+if (ui.exitRouteBtn) {
+  ui.exitRouteBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    exitRoute();
+  });
+}
+if (ui.navHudStopBtn) {
+  ui.navHudStopBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    stopNavigation();
+  });
+}
 
 // Predict Button & FloodShield Evacuation Prioritisation (Bottom Middle)
 if (ui.predictBtn) {

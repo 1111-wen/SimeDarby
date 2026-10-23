@@ -82,6 +82,28 @@
       </div>
     </div>
 
+        <!-- Live Turn-by-Turn Navigation HUD Banner (Floating Top Driving Guidance) -->
+    <div class="nav-hud-banner" id="navHudBanner" hidden style="display:none;">
+      <div class="nav-hud-turn-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </div>
+      <div class="nav-hud-body">
+        <div class="nav-hud-instruction" id="navHudInstruction">Follow safe flood-bypass route</div>
+        <div class="nav-hud-meta">
+          <span class="nav-hud-eta" id="navHudEta">17 min</span>
+          <span class="nav-hud-sep">•</span>
+          <span class="nav-hud-dist" id="navHudDist">5.0 km</span>
+          <span class="nav-hud-sep">•</span>
+          <span class="nav-hud-dest" id="navHudDest">Safe Route</span>
+        </div>
+      </div>
+      <button type="button" class="nav-hud-stop-btn" id="navHudStopBtn" title="Stop live navigation">
+        ✕ Stop
+      </button>
+    </div>
+
     <!-- Left Navigation & Route Details Sidebar Stack -->
     <div class="sidebar" id="sidebar">
       <form class="trip" id="trip" autocomplete="off">
@@ -128,6 +150,23 @@
           <div class="routehead"><h1 id="eta">Loading…</h1><span id="dist"></span></div>
           <p class="routesub" id="routeSub"></p>
           <p class="warn" id="warn" hidden></p>
+          <!-- Start Navigation & Exit Route Action Buttons (Under 17min Box) -->
+          <div class="route-action-buttons" id="routeActionButtons">
+            <button type="button" class="btn-route-action btn-route-start" id="startRouteBtn" title="Start live turn-by-turn safe navigation">
+              <svg class="btn-action-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/>
+              </svg>
+              <span id="startRouteBtnText">Start</span>
+            </button>
+            <button type="button" class="btn-route-action btn-route-exit" id="exitRouteBtn" title="Exit route directions and clear destination">
+              <svg class="btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              <span>Exit</span>
+            </button>
+          </div>
+
 
           <ol class="steps" id="steps" aria-label="Directions"></ol>
           <p class="meta" id="meta"></p>
