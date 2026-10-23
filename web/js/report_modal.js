@@ -11,25 +11,41 @@ let currentUploadedPhotoData = SAMPLE_FLOOD_PHOTOS.moderate; // default sample p
 let currentSelectedZoneId = "zone-klang-utama";
 let onReportSubmittedCallback = null;
 
+function getContainer() {
+  return modalContainer || document.getElementById("reportModalSlot") || document.getElementById("reportFloodModal");
+}
+
 export function initReportModal(containerEl, onReportSuccess) {
-  modalContainer = containerEl;
+  modalContainer = containerEl || document.getElementById("reportModalSlot");
   onReportSubmittedCallback = onReportSuccess;
   renderReportForm("zone-klang-utama");
 }
 
 export function openReportModal(preselectedZoneId = "zone-klang-utama") {
-  if (!modalContainer) return;
+  const backdrop = document.getElementById("reportModalBackdrop");
+  const slot = document.getElementById("reportModalSlot");
+  modalContainer = slot || backdrop;
   currentSelectedZoneId = preselectedZoneId;
   currentUploadedPhotoData = SAMPLE_FLOOD_PHOTOS.moderate;
   renderReportForm(preselectedZoneId);
-  modalContainer.hidden = false;
-  modalContainer.style.display = "flex";
+
+  if (backdrop) {
+    backdrop.removeAttribute("hidden");
+    backdrop.hidden = false;
+    backdrop.style.display = "flex";
+  }
+
+  const reportBtn = document.getElementById("reportBtn");
+  if (reportBtn) reportBtn.setAttribute("aria-pressed", "true");
 }
 
 export function closeReportModal() {
-  if (!modalContainer) return;
-  modalContainer.hidden = true;
-  modalContainer.style.display = "none";
+  const backdrop = document.getElementById("reportModalBackdrop");
+  if (backdrop) {
+    backdrop.setAttribute("hidden", "");
+    backdrop.hidden = true;
+    backdrop.style.display = "none";
+  }
   const reportBtn = document.getElementById("reportBtn");
   if (reportBtn) reportBtn.setAttribute("aria-pressed", "false");
 }
@@ -48,7 +64,9 @@ function renderReportForm(selectedZoneId) {
     return `<option value="${z.id}" ${isSelected ? 'selected' : ''}>${z.icon} ${z.shortName}</option>`;
   }).join("");
 
-  modalContainer.innerHTML = `
+  const container = getContainer();
+  if (!container) return;
+  container.innerHTML = `
     <div class="report-modal-content">
       <!-- Header -->
       <div class="risk-panel-header" style="margin-bottom:10px;">
@@ -274,7 +292,9 @@ function bindFormEvents() {
  * Step 2: Render Submitted Confirmation Page with Details & Thank You
  */
 function renderReportSuccessView(data) {
-  modalContainer.innerHTML = `
+  const container = getContainer();
+  if (!container) return;
+  container.innerHTML = `
     <div class="report-modal-content report-success-content">
       <!-- Success Header -->
       <div class="risk-panel-header" style="margin-bottom:12px; border-bottom:1px solid #86efac;">

@@ -2106,25 +2106,54 @@ details p { margin: 6px 0; }
 .report-btn-icon { font-size: 17px; }
 .report-btn-label { letter-spacing: -0.01em; }
 
+/* Dedicated Citizen Flood Incident Report Modal Backdrop */
+.report-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  animation: fadeInModal .2s ease;
+}
+
+.report-modal-backdrop[hidden] {
+  display: none !important;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .report-flood-modal {
-  width: 350px;
-  max-width: calc(100vw - 165px);
+  width: 440px;
+  max-width: 95vw;
   background: var(--panel);
   border: 1.5px solid var(--line);
-  border-radius: 16px;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
-  padding: 12px 14px;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  animation: slideDownRisk .2s cubic-bezier(0.16, 1, 0.3, 1);
-  max-height: 80vh;
+  gap: 12px;
+  animation: popInModal .22s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: 88vh;
   box-sizing: border-box;
   overflow-y: auto;
 }
 
-.report-flood-modal[hidden] {
-  display: none !important;
+@keyframes popInModal {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .report-form-body {

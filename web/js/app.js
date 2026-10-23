@@ -1981,7 +1981,8 @@ if (ui.reportBtn) {
   ui.reportBtn.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const isHidden = !ui.reportFloodModal || ui.reportFloodModal.hidden || ui.reportFloodModal.style.display === "none";
+    const backdrop = document.getElementById("reportModalBackdrop");
+    const isHidden = !backdrop || backdrop.hidden || backdrop.style.display === "none";
     if (isHidden) {
       // Mutually close risk section panel if open
       const riskPanel = document.getElementById("riskSectionPanel");
@@ -1993,10 +1994,19 @@ if (ui.reportBtn) {
       if (riskBtn) riskBtn.setAttribute("aria-expanded", "false");
       closePredictModal();
 
-      ui.reportBtn.setAttribute("aria-pressed", "true");
       openReportModal();
       toast("📢 Citizen Report: Upload flood photo & report affected areas");
     } else {
+      closeReportModal();
+    }
+  });
+}
+
+// Backdrop click to close report modal
+const reportBackdropEl = document.getElementById("reportModalBackdrop");
+if (reportBackdropEl) {
+  reportBackdropEl.addEventListener("click", (e) => {
+    if (e.target === reportBackdropEl) {
       closeReportModal();
     }
   });
