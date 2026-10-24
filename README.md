@@ -1,6 +1,30 @@
-# FloodSafe Route — Bandar Bukit Raja Sponge Township
+# SafeTown — Flood-predictive evacuation app
 
-A flood-aware map and evacuation routing progressive web app (PWA) for **Bandar Bukit Raja (BBR), Klang, Selangor**, piloted around **Taman Kyra, Taman Casira and Jalan Makyong**, areas with reported floods in 2023 and 2024.
+## Try our live interactive prototype:
+🔗 https://consulting-utilization-valley-guy.trycloudflare.com/
+(Note: Best experienced on desktop/laptop. Please allow a few moments for the 3D map assets to finish loading. A dedicated mobile app is planned for future release.)
+
+SafeTown is a flood-predictive evacuation app that combines Machine Learning model, forecasts flood depth, maps the safest routes and gets residents out before the water locks them in.
+
+## Watch the demo video here:
+🔗https://youtu.be/yxBR06dzHSE (Note: For better experience, change Settings Quality to 2160p (4K).)
+
+## Main Features:
+1. **Safe & Fast Route Navigation:** Calculates the fastest and safest evacuation paths based on live conditions to navigate users away from flooded zones.
+
+2. **Emergency Destination Quick-Access:** Provides one-tap routing to critical facilities, including emergency shelters, hospitals, and rescue team stations.
+
+3. **Real-Time Flood Risk Mapping:** Displays color-coded risk zones across different areas so users can instantly identify danger spots to avoid and safe locations for evacuation.
+
+4. **AI-Powered Flood Forecasting:** Utilizes an XGBoost model trained on JPS (Jabatan Pengairan dan Saliran) river-level data (e.g., Sungai Binjai) to forecast water levels 3 hours ahead, mapping simulated future conditions across selected times.
+
+5. **Crowdsourced Community Reporting:** Empowers residents to submit local flood reports and upload conditions to warn neighboring communities in real time.
+
+6. **Early Evacuation Warning & Timing:** Alerts residents 3 hours prior to an impending flood, estimating the required evacuation duration and departure buffer time.
+
+7. **One-Tap SOS Emergency Dispatch:** Enables stranded individuals to submit distress requests with personal and location details directly to emergency response teams.
+
+8. **Role-Based Admin & Rescue Dashboard:** Equips administrators and rescue operators with a dedicated portal to track reported victim counts, monitor distress clusters, and coordinate rescue operations.
 
 Built for the **Sime Darby Property University Hackathon 2026** ("Township of Tomorrow" — People & Sustainability themes). Designed to work for flood-prone townships across Malaysia.
 
