@@ -64,42 +64,23 @@ Built for the **Sime Darby Property University Hackathon 2026** ("Township of To
   - **BBR Wetland Lake Perimeter (Elev: 4.10m):** Overtopping retention perimeter at 4.30m (depth 35 cm).
   - **Masjid Bandar Bukit Raja PPS & Persiaran BBR (Elev: 5.60m):** **100% Safe & Immune** throughout 100-year events ($0\text{ cm}$ depth).
 
-### 4. 🧭 Safest & Shortest Dynamic Routing Algorithm (Modified Dijkstra Engine)
-FloodSafe Route rejects naive distance-only pathfinding in favour of a **safety-first, hydrodynamic-aware Dijkstra graph solver**:
+### 4. 🧭 How We Pick the Safest & Shortest Route (In Simple Terms)
+Most standard map apps only look for the shortest distance, which can accidentally direct drivers straight into flooded streets. SafeTown uses a **smart safety-first routing engine** that balances speed and flood safety through 5 simple rules:
 
-1. **Digital Road Graph Representation $G = (V, E)$:**
-   - Real-world topological road corridors, junctions, and one-way constraints derived from OpenStreetMap.
-   - Physical segment lengths $L_e$ calculated using the **Haversine geodesic formula** in metres.
-   - Origin and destination pins are projected perpendicularly onto the road network via **orthogonal 2D vector snapping**, bisecting the edge dynamically so turn-by-turn guidance starts with exact metre precision.
+1. 🚫 **Blocks Dangerous Roads (Safety First):**  
+   If water on a road is forecast to reach **30 cm or deeper** (about knee-height or car bumper level, which can float a car or stall the engine), the app treats that road as a completely closed wall. Cars are **never** guided into deep water.
 
-2. **Predictive 30-Minute Forward Lookahead Window ($t \to t + 30\text{ min}$):**
-   - The routing engine does not merely route on present water conditions. It determines the **maximum forecast water depth $D_e(t)$** across the next 30 minutes:
-     $$D_e(t) = \max_{0 \le \Delta t \le 30\text{ min}} \text{Depth}_e(t + \Delta t)$$
-   - *Operational Value:* Motorists are never directed into an escape corridor that is dry upon departure but will become submerged 10 or 15 minutes into their journey.
+2. 🔮 **Looks 30 Minutes into the Future:**  
+   A road might look completely dry when you leave your house, but if river overflow will submerge it 15 minutes later, the app reroutes you **before** you depart so you don't get trapped midway.
 
-3. **Civil & Hydrodynamic Safety Thresholds:**
-   - **🚗 Drive Mode:** Moderate Risk: $10\text{ cm} \le D_e < 30\text{ cm}$ (sedan bumper & exhaust clearance) | High Risk: $\ge 30\text{ cm}$ (engine hydraulic lock, loss of adhesion, and vehicle flotation threshold).
-   - **🚶 Walk Mode:** Moderate Risk: $5\text{ cm} \le D_e < 15\text{ cm}$ | High Risk: $\ge 15\text{ cm}$ (dynamic water pressure sweeps an adult pedestrian off their feet).
+3. ⚡ **Picks the Fastest Safe Route:**  
+   When multiple roads are completely dry and safe, the app simply picks the **shortest and fastest** route to get you to your relief centre or destination.
 
-4. **Dynamic Flood Cost Function:**
-   The algorithm queries a binary min-heap where the effective traversal cost $C(e)$ of an edge is evaluated as:
+4. 🔄 **Prefers Dry Detours over Puddles:**  
+   If a street has shallow surface water (10 to 20 cm), the app will automatically suggest a slightly longer dry detour around it. It will only guide you through shallow water if every single dry exit is completely blocked.
 
-   ```math
-   C(e) = \begin{cases} 
-   \infty & \text{if } D_e \ge \text{High Threshold } (\ge 30\text{ cm for cars}) \\
-   L_e \times \left(1 + \text{Penalty}_{\text{moderate}} + 4 \times D_e\right) & \text{if road is passable}
-   \end{cases}
-   ```
-
-   - **High-Risk Road ($\ge 30\text{ cm}$):** $C(e) = \infty$ *(Road segment strictly blocked and pruned from graph)*
-   - **Passable Road ($< 30\text{ cm}$):** $C(e) = L_e \times \left(1 + \text{Penalty}_{\text{moderate}} + 4 \times D_e\right)$
-
-5. **How "Safest" and "Shortest" are Balanced:**
-   - **Absolute Safety (High Risk $= \infty$):** Any road segment forecast to reach $\ge 30\text{ cm}$ receives an infinite cost ($C(e) = \infty$) and is completely pruned from the Dijkstra search tree. The system **never** routes a vehicle into life-threatening floodwaters.
-   - **Geodesic Shortest Path on Dry Ground ($1.0 \times L_e$):** When roads are dry ($D_e = 0$), $C(e) = L_e$. The algorithm returns the geometrically shortest and fastest transit route.
-   - **Intelligent Dry Bypasses:** Passable roads with moderate water ($10\text{--}25\text{ cm}$) incur a $+250\%$ base penalty plus depth scaling. If a completely dry detour exists that is only slightly longer, the algorithm automatically picks the dry detour, navigating through shallow water only as an absolute last resort if all other options are severed.
-   - **Elevated Spine Corridors & Bridges:** Bridge decks remain dry and open unless low-lying approach ramps are submerged. Routes prioritize high ground (e.g. Persiaran BBR spine road, elevation $5.60\text{ m}$) away from low-lying retention wetland perimeters.
-   - **Interactive Live Navigation HUD:** Complete with 3D driver perspective camera tilt, top turn-by-turn guidance banner, and one-tap **`▶ Start`** / **`✕ Exit`** trip management.
+5. 🏔️ **Sticks to High Ground & Bridges:**  
+   Routes automatically guide drivers toward high-elevation main roads (like Persiaran Bandar Bukit Raja) and flyover bridges, safely steering clear of low-lying retention ponds and overflowing monsoon drains.
 
 ### 5. 🏃 FloodShield: Time-Critical Evacuation Prioritisation
 - **Evacuation Buffer Formula:**
