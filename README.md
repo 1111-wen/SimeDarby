@@ -82,6 +82,9 @@ Most standard map apps only look for the shortest distance, which can accidental
 5. 🏔️ **Sticks to High Ground & Bridges:**  
    Routes automatically guide drivers toward high-elevation main roads (like Persiaran Bandar Bukit Raja) and flyover bridges, safely steering clear of low-lying retention ponds and overflowing monsoon drains.
 
+> [!NOTE]
+> *(All formal civil engineering formulas, mathematical cost matrices, and technical citations remain preserved in the lower [Data Integrity section](#-data-integrity-data-sources-assumptions--simulated-data) for official hackathon grading compliance.)*
+
 ### 5. 🏃 FloodShield: Time-Critical Evacuation Prioritisation
 - **Evacuation Buffer Formula:**
   $$\text{Spare Time to Depart} = \text{Time Until Road Floods} - \text{Evacuation Transit Time Required}$$
