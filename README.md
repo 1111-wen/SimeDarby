@@ -83,10 +83,16 @@ FloodSafe Route rejects naive distance-only pathfinding in favour of a **safety-
 
 4. **Dynamic Flood Cost Function:**
    The algorithm queries a binary min-heap where the effective traversal cost $C(e)$ of an edge is evaluated as:
-   $$C(e) = \begin{cases} 
+
+   ```math
+   C(e) = \begin{cases} 
    \infty & \text{if } D_e \ge \text{High Threshold } (\ge 30\text{ cm for cars}) \\
    L_e \times \left(1 + \text{Penalty}_{\text{moderate}} + 4 \times D_e\right) & \text{if road is passable}
-   \end{cases}$$
+   \end{cases}
+   ```
+
+   - **High-Risk Road ($\ge 30\text{ cm}$):** $C(e) = \infty$ *(Road segment strictly blocked and pruned from graph)*
+   - **Passable Road ($< 30\text{ cm}$):** $C(e) = L_e \times \left(1 + \text{Penalty}_{\text{moderate}} + 4 \times D_e\right)$
 
 5. **How "Safest" and "Shortest" are Balanced:**
    - **Absolute Safety (High Risk $= \infty$):** Any road segment forecast to reach $\ge 30\text{ cm}$ receives an infinite cost ($C(e) = \infty$) and is completely pruned from the Dijkstra search tree. The system **never** routes a vehicle into life-threatening floodwaters.
