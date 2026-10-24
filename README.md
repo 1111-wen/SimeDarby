@@ -64,7 +64,38 @@ Built for the **Sime Darby Property University Hackathon 2026** ("Township of To
   - **BBR Wetland Lake Perimeter (Elev: 4.10m):** Overtopping retention perimeter at 4.30m (depth 35 cm).
   - **Masjid Bandar Bukit Raja PPS & Persiaran BBR (Elev: 5.60m):** **100% Safe & Immune** throughout 100-year events ($0\text{ cm}$ depth).
 
-### 4. 🏃 FloodShield: Time-Critical Evacuation Prioritisation
+### 4. 🧭 Safest & Shortest Dynamic Routing Algorithm (Modified Dijkstra Engine)
+FloodSafe Route rejects naive distance-only pathfinding in favour of a **safety-first, hydrodynamic-aware Dijkstra graph solver**:
+
+1. **Digital Road Graph Representation $G = (V, E)$:**
+   - Real-world topological road corridors, junctions, and one-way constraints derived from OpenStreetMap.
+   - Physical segment lengths $L_e$ calculated using the **Haversine geodesic formula** in metres.
+   - Origin and destination pins are projected perpendicularly onto the road network via **orthogonal 2D vector snapping**, bisecting the edge dynamically so turn-by-turn guidance starts with exact metre precision.
+
+2. **Predictive 30-Minute Forward Lookahead Window ($t \to t + 30\text{ min}$):**
+   - The routing engine does not merely route on present water conditions. It determines the **maximum forecast water depth $D_e(t)$** across the next 30 minutes:
+     $$D_e(t) = \max_{0 \le \Delta t \le 30\text{ min}} \text{Depth}_e(t + \Delta t)$$
+   - *Operational Value:* Motorists are never directed into an escape corridor that is dry upon departure but will become submerged 10 or 15 minutes into their journey.
+
+3. **Civil & Hydrodynamic Safety Thresholds:**
+   - **🚗 Drive Mode:** Moderate Risk: $10\text{ cm} \le D_e < 30\text{ cm}$ (sedan bumper & exhaust clearance) | High Risk: $\ge 30\text{ cm}$ (engine hydraulic lock, loss of adhesion, and vehicle flotation threshold).
+   - **🚶 Walk Mode:** Moderate Risk: $5\text{ cm} \le D_e < 15\text{ cm}$ | High Risk: $\ge 15\text{ cm}$ (dynamic water pressure sweeps an adult pedestrian off their feet).
+
+4. **Dynamic Flood Cost Function:**
+   The algorithm queries a binary min-heap where the effective traversal cost $C(e)$ of an edge is evaluated as:
+   $$C(e) = \begin{cases} 
+   \infty & \text{if } D_e \ge \text{High Threshold } (\ge 30\text{ cm for cars}) \\
+   L_e \times \left(1 + \text{Penalty}_{\text{moderate}} + 4 \times D_e\right) & \text{if road is passable}
+   \end{cases}$$
+
+5. **How "Safest" and "Shortest" are Balanced:**
+   - **Absolute Safety (High Risk $= \infty$):** Any road segment forecast to reach $\ge 30\text{ cm}$ receives an infinite cost ($C(e) = \infty$) and is completely pruned from the Dijkstra search tree. The system **never** routes a vehicle into life-threatening floodwaters.
+   - **Geodesic Shortest Path on Dry Ground ($1.0 \times L_e$):** When roads are dry ($D_e = 0$), $C(e) = L_e$. The algorithm returns the geometrically shortest and fastest transit route.
+   - **Intelligent Dry Bypasses:** Passable roads with moderate water ($10\text{--}25\text{ cm}$) incur a $+250\%$ base penalty plus depth scaling. If a completely dry detour exists that is only slightly longer, the algorithm automatically picks the dry detour, navigating through shallow water only as an absolute last resort if all other options are severed.
+   - **Elevated Spine Corridors & Bridges:** Bridge decks remain dry and open unless low-lying approach ramps are submerged. Routes prioritize high ground (e.g. Persiaran BBR spine road, elevation $5.60\text{ m}$) away from low-lying retention wetland perimeters.
+   - **Interactive Live Navigation HUD:** Complete with 3D driver perspective camera tilt, top turn-by-turn guidance banner, and one-tap **`▶ Start`** / **`✕ Exit`** trip management.
+
+### 5. 🏃 FloodShield: Time-Critical Evacuation Prioritisation
 - **Evacuation Buffer Formula:**
   $$\text{Spare Time to Depart} = \text{Time Until Road Floods} - \text{Evacuation Transit Time Required}$$
 - **Area Prioritisation Example:**
@@ -72,16 +103,16 @@ Built for the **Sime Darby Property University Hackathon 2026** ("Township of To
   - **Area B (Taman Klang Utama):** Road floods in 120 mins (2 hours), residents need 20 mins to evacuate $\rightarrow$ **100 mins (1h 40m) spare time ⏳ (Adequate buffer: Prepare essentials)**.
   - **Key Decision Value:** Identifies neighbourhoods with the tightest remaining evacuation windows so emergency services can issue alerts before access corridors are severed.
 
-### 5. 📢 Citizen Flood Incident Reporting & Live Crowd-Sourced Alerts
+### 6. 📢 Citizen Flood Incident Reporting & Live Crowd-Sourced Alerts
 - Residents can upload on-the-ground flood photos, report water depth categories (Ankle, Knee, Waist, Submerged), and note stranded vehicles or overflowing drains.
 - Instant map popups display the number of citizens who verified the condition (e.g., `(22 people reported this area is flooded)`).
 
-### 6. 🆘 Emergency SOS Rescue System & Role-Based Command (Resident vs Admin)
+### 7. 🆘 Emergency SOS Rescue System & Role-Based Command (Resident vs Admin)
 - **Resident SOS Request:** Trapped citizens submit emergency SOS rescue tickets detailing their GPS coordinates, street address, headcount (adults, children, elderly/bedridden), and water depth.
 - **Role Switcher & Admin Verification:** Emergency responders log in via secure credentials (`admin` / `admin123`) to unlock the **Rescue Command Center**.
 - **Live SOS Dispatch Map:** Red pulsing distress beacons appear across the map at trapped residents' exact houses. Admins can view pending requests and click **"🚤 Dispatch Rescue Boat"** to automatically plot the safest boat route from **Bomba Klang Utara Water Rescue Base** directly to the victim.
 
-### 7. 🚨 Emergency Facilities Directory
+### 8. 🚨 Emergency Facilities Directory
 - **Shelters:** Masjid Bandar Bukit Raja (official PPS relief centre), Dewan MBDK Klang (Hamzah), Grace Community Services.
 - **Hospitals:** Columbia Asia Hospital Klang, Hospital Tengku Ampuan Rahimah (HTAR), Klinik Dr Rosli Bukit Raja.
 - **Rescue Stations:** Balai Bomba Klang Utara (BBP Sg. Pinang, PPDA unit), Balai Bomba Klang Selatan (BBP Kota Raja).
@@ -141,7 +172,7 @@ The routing and evacuation decision algorithms operate under validated civil and
 | **Passenger Vehicle — High Risk (Impassable)** | $\ge 30\text{ cm}$ | Buoyancy threshold for standard sedans and compact cars; vehicle loses contact with roadbed and begins to float or suffer catastrophic engine hydraulic lock. |
 | **Evacuation Lookahead Horizon** | $180\text{ minutes}$ (3 hours) | Matches JPS upstream-downstream hydrologic concentration lag time and provides adequate window for pre-evacuation alert. |
 | **Evacuation Spare Time Margin** | $T_{\text{spare}} = T_{\text{flood}} - T_{\text{evac}}$ | Residents must depart before their critical escape route floods. If $T_{\text{spare}} \le 15\text{ min}$, flagged as **🚨 URGENT**; if $15 < T_{\text{spare}} \le 45\text{ min}$, flagged as **⚠️ PRE-EVACUATION**; if $T_{\text{spare}} > 45\text{ min}$, flagged as **⏳ SAFE BUFFER**. |
-| **Routing Cost Penalties** | High Risk: $\infty$ (Strictly Avoided)<br>Moderate Risk: $4\times$ distance penalty | High-risk segments are eliminated from the Dijkstra routing graph. Moderate-risk segments are allowed only if no completely dry detour exists. |
+| **Routing Cost Penalties** | High Risk: $C(e) = \infty$ (Strictly Avoided)<br>Moderate Risk: $C(e) = L_e \times (3.5 + 4 \times D_e)$ | High-risk segments forecast to reach $\ge 30\text{ cm}$ are pruned with infinite cost, guaranteeing vehicles never drive into floodwater. Passable roads with moderate water incur dynamic cost penalties, preferring dry detours whenever available. |
 | **Bridge Elevation Safety** | Elevated above 100-year flood levels | Bridge decks remain structurally dry; however, access is throttled if the low-lying approach roads leading onto the bridge are submerged. |
 
 ---
