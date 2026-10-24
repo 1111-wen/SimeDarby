@@ -83,7 +83,7 @@ Most standard map apps only look for the shortest distance, which can accidental
    Routes automatically guide drivers toward high-elevation main roads (like Persiaran Bandar Bukit Raja) and flyover bridges, safely steering clear of low-lying retention ponds and overflowing monsoon drains.
 
 > [!NOTE]
-> *(All formal civil engineering formulas, mathematical cost matrices, and technical citations remain preserved in the lower [Data Integrity section](#-data-integrity-data-sources-assumptions--simulated-data) for official hackathon grading compliance.)*
+> *(All formal civil engineering formulas, mathematical cost matrices, and technical citations are fully documented in [Data Integrity Section 4: Mathematical Engineering Formulation for Route Decision](#4--mathematical-engineering-formulation-for-route-decision) below.)*
 
 ### 5. 🏃 FloodShield: Time-Critical Evacuation Prioritisation
 - **Evacuation Buffer Formula:**
@@ -167,7 +167,40 @@ The routing and evacuation decision algorithms operate under validated civil and
 
 ---
 
-### 4. Technical Constraints & Prototype Scope
+### 4. 📐 Mathematical Engineering Formulation for Route Decision
+
+For technical and academic evaluation, the exact algorithmic cost functions and graph parameters implemented in `web/js/routing.js` and `web/js/flood.js` are defined below:
+
+#### 1. Road Graph Network & Geodesic Distance
+The township street corridor is modeled as a directed/undirected graph $G = (V, E)$, where $V$ represents junctions and $E$ represents road segments. The true physical length $L_e$ of an edge $e \in E$ connecting coordinate pairs is computed via the **Haversine geodesic equation**:
+
+$$d = 2R \arcsin\left(\sqrt{\sin^2\left(\frac{\Delta \text{lat}}{2}\right) + \cos(\text{lat}_1)\cos(\text{lat}_2)\sin^2\left(\frac{\Delta \text{lon}}{2}\right)}\right)$$
+
+*(where $R = 6,371,000\text{ m}$ is the mean Earth radius).*
+
+#### 2. Forward Hydrodynamic Lookahead Window ($t \to t + 30\text{ min}$)
+To protect motorists from entering corridors that will be overtaken by rising water during travel, the effective flood depth $D_e(t)$ queries the peak water depth across a 30-minute predictive horizon:
+
+$$D_e(t) = \max_{0 \le \Delta t \le 30\text{ min}} \text{Depth}_e(t + \Delta t)$$
+
+#### 3. Dynamic Piecewise Dijkstra Edge Traversal Cost Function $C(e)$
+The optimal evacuation route path $P^* = (e_1, e_2, \dots, e_k)$ minimizes the total cumulative graph cost $\sum_{i=1}^k C(e_i)$, where the edge cost $C(e)$ is evaluated dynamically:
+
+```math
+C(e) = \begin{cases} 
+\infty & \text{if } D_e(t) \ge \text{High Threshold } (\ge 0.30\text{ m for Drive, } \ge 0.15\text{ m for Walk}) \\
+L_e \times \left(1 + \text{Penalty}_{\text{moderate}} + 4 \times D_e(t)\right) & \text{if } D_e(t) < \text{High Threshold}
+\end{cases}
+```
+
+Where:
+* **$\text{Penalty}_{\text{moderate}}$:** Assigned $+2.5$ if $D_e(t) \ge 0.10\text{ m}$ (Drive) or $\ge 0.05\text{ m}$ (Walk), and $0$ otherwise.
+* **$4 \times D_e(t)$:** Continuous hydrodynamic resistance scaling coefficient proportional to inundation depth.
+* **Safety Invariant:** Segments reaching $C(e) = \infty$ are skipped during binary min-heap relaxation, mathematically guaranteeing that vehicles are **never** routed into impassable floodwater.
+
+---
+
+### 5. Technical Constraints & Prototype Scope
 1. **Subsurface Micro-Drainage:** Trunk monsoon drains (U-drains and RCBC box culverts) are explicitly modeled. Secondary residential roadside gutters are approximated via lumped catchment storage coefficients.
 2. **Auxiliary Support System:** This web application is an auxiliary public decision-support tool. In any real-world emergency, directives issued by the Royal Malaysia Police (PDRM), Fire & Rescue Department (JBPM / Bomba), Civil Defence (APM), and NADMA take absolute precedence.
 
